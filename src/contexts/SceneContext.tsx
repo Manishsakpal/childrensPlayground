@@ -6,15 +6,18 @@ import React, { createContext, useState, useContext, ReactNode } from 'react';
 interface SceneContextType {
   movementMultiplier: number;
   setMovementMultiplier: (multiplier: number) => void;
+  isMovementEnabled: boolean;
+  setIsMovementEnabled: (enabled: boolean) => void;
 }
 
 const SceneContext = createContext<SceneContextType | undefined>(undefined);
 
 export const SceneProvider = ({ children }: { children: ReactNode }) => {
   const [movementMultiplier, setMovementMultiplier] = useState(1);
+  const [isMovementEnabled, setIsMovementEnabled] = useState(true);
 
   return (
-    <SceneContext.Provider value={{ movementMultiplier, setMovementMultiplier }}>
+    <SceneContext.Provider value={{ movementMultiplier, setMovementMultiplier, isMovementEnabled, setIsMovementEnabled }}>
       {children}
     </SceneContext.Provider>
   );
@@ -27,7 +30,9 @@ export const useSceneContext = () => {
     // This can happen in the Header when it's rendered on a page other than /scene.
     return {
         movementMultiplier: 1,
-        setMovementMultiplier: () => {}
+        setMovementMultiplier: () => {},
+        isMovementEnabled: true,
+        setIsMovementEnabled: () => {}
     };
   }
   return context;

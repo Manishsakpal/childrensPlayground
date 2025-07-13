@@ -9,10 +9,11 @@ import { cn } from "@/lib/utils";
 import { useSceneContext } from "@/contexts/SceneContext";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Switch } from "./ui/switch";
 
 export function Header() {
   const pathname = usePathname();
-  const { movementMultiplier, setMovementMultiplier } = useSceneContext();
+  const { movementMultiplier, setMovementMultiplier, isMovementEnabled, setIsMovementEnabled } = useSceneContext();
 
   const navItems: { href: string; label: string }[] = [
     { href: "/", label: "Draw" },
@@ -43,19 +44,29 @@ export function Header() {
             </Button>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-4">
             {pathname === '/scene' && (
-                 <div className="flex items-center gap-2">
-                    <Label htmlFor="multiplier" className="text-sm whitespace-nowrap text-muted-foreground">Speed:</Label>
-                    <Input 
-                        id="multiplier"
-                        type="number"
-                        value={movementMultiplier}
-                        onChange={(e) => setMovementMultiplier(Number(e.target.value))}
-                        className="w-20 h-8"
-                        min="0.1"
-                        step="0.1"
-                    />
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="movement-switch" className="text-sm whitespace-nowrap text-muted-foreground">Move</Label>
+                      <Switch 
+                        id="movement-switch"
+                        checked={isMovementEnabled}
+                        onCheckedChange={setIsMovementEnabled}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="multiplier" className="text-sm whitespace-nowrap text-muted-foreground">Speed:</Label>
+                        <Input 
+                            id="multiplier"
+                            type="number"
+                            value={movementMultiplier}
+                            onChange={(e) => setMovementMultiplier(Number(e.target.value))}
+                            className="w-20 h-8"
+                            min="0.1"
+                            step="0.1"
+                        />
+                    </div>
                 </div>
             )}
         </div>

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, XCircle } from "lucide-react";
+import { Plus, XCircle, MinusCircle, PlusCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSceneContext } from "@/contexts/SceneContext";
 
@@ -36,7 +36,7 @@ export default function ScenePage() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [draggedItem, setDraggedItem] = useState<{ src: string } | null>(null);
   const [movedImage, setMovedImage] = useState<MovedImageState | null>(null);
-  const { movementMultiplier } = useSceneContext();
+  const { movementMultiplier, isMovementEnabled } = useSceneContext();
 
   useEffect(() => {
     setIsMounted(true);
@@ -76,6 +76,18 @@ export default function ScenePage() {
   
   const handleDeleteImage = (id: string) => {
     setDroppedImages(prev => prev.filter(img => img.id !== id));
+  };
+
+  const handleChangeSize = (id: string, factor: number) => {
+    setDroppedImages(prev => prev.map(img => {
+      if (img.id === id) {
+        const aspectRatio = img.width / img.height;
+        const newWidth = img.width + 10 * factor;
+        const newHeight = newWidth / aspectRatio;
+        return { ...img, width: newWidth, height: newHeight };
+      }
+      return img;
+    }));
   };
   
   const handleMouseDownOnImage = (e: ReactMouseEvent<HTMLDivElement>, img: DroppedImage) => {
@@ -138,7 +150,7 @@ export default function ScenePage() {
   }, [movedImage, handleMouseMove, handleMouseUp]);
 
   useEffect(() => {
-    if (!isMounted || movedImage) return;
+    if (!isMounted || movedImage || !isMovementEnabled) return;
 
     const effectiveMultiplier = Math.max(0.1, movementMultiplier);
     const intervalDuration = 1000 / effectiveMultiplier;
@@ -167,7 +179,7 @@ export default function ScenePage() {
     }, intervalDuration);
 
     return () => clearInterval(intervalId);
-  }, [isMounted, movedImage, movementMultiplier]);
+  }, [isMounted, movedImage, movementMultiplier, isMovementEnabled]);
 
 
   if (!isMounted) {
@@ -260,6 +272,7 @@ export default function ScenePage() {
                       top: img.y, 
                       width: img.width, 
                       height: img.height,
+                      transition: isMovementEnabled ? 'left 1s ease-in-out, top 1s ease-in-out' : 'none'
                     }}
                     onMouseDown={(e) => handleMouseDownOnImage(e, img)}
                   >
@@ -273,19 +286,45 @@ export default function ScenePage() {
                          movedImage?.id === img.id && "opacity-75"
                       )}
                     />
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity rounded-full z-10 cursor-pointer"
-                      onClick={(e) => {
+                     <div className="absolute -top-2 -right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                       <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6 rounded-full bg-background hover:bg-muted"
+                        onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteImage(img.id);
+                          handleChangeSize(img.id, -1);
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        <MinusCircle className="h-4 w-4" />
+                      </Button>
+                       <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6 rounded-full bg-background hover:bg-muted"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleChangeSize(img.id, 1);
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="h-6 w-6 rounded-full"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteImage(img.id);
+                          }
                         }
-                      }
-                      onMouseDown={(e) => e.stopPropagation()}
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
             </div>
