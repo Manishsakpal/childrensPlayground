@@ -7,7 +7,6 @@ import {
   Redo,
   Trash2,
   Save,
-  Palette,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
