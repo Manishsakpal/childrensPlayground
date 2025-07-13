@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, DragEvent, MouseEvent as ReactMouseEvent } from "react";
+import React, { useState, useEffect, DragEvent, MouseEvent as ReactMouseEvent, useCallback } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -24,7 +24,6 @@ interface DroppedImage {
 
 interface MovedImageState {
   id: string;
-  layerName: LayerName;
   offsetX: number;
   offsetY: number;
 }
@@ -40,7 +39,7 @@ export default function ScenePage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  
+
   const layerConfigs: { name: LayerName; style: React.CSSProperties; title: string; hoverClass: string }[] = [
     { name: 'sky', style: { top: '0%', height: '25%' }, title: 'Sky Layer (25%)', hoverClass: 'hover:border-blue-300 hover:bg-blue-300/10' },
     { name: 'trees', style: { top: '25%', height: '30%' }, title: 'Trees Layer (30%)', hoverClass: 'hover:border-green-400 hover:bg-green-400/10' },
@@ -84,48 +83,95 @@ export default function ScenePage() {
     e.preventDefault();
     e.stopPropagation();
     
+    const imageElement = e.currentTarget;
+    const parentLayer = imageElement.closest('[data-layer-name]') as HTMLElement;
+    if (!parentLayer) return;
+
+    const layerRect = parentLayer.getBoundingClientRect();
+    const imageRect = imageElement.getBoundingClientRect();
+    
     setMovedImage({
       id: img.id,
-      layerName: img.layer,
-      offsetX: e.nativeEvent.offsetX,
-      offsetY: e.nativeEvent.offsetY,
+      offsetX: e.clientX - imageRect.left,
+      offsetY: e.clientY - imageRect.top,
     });
   };
-  
-  const handleMouseMoveOnLayer = (e: ReactMouseEvent<HTMLDivElement>, layerName: LayerName) => {
-    if (!movedImage || movedImage.layerName !== layerName) return;
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!movedImage) return;
 
     e.preventDefault();
     e.stopPropagation();
 
-    const layerRect = e.currentTarget.getBoundingClientRect();
-    
     setDroppedImages(prev => prev.map(img => {
-      if (img.id === movedImage.id) {
-        
-        let newX = e.nativeEvent.offsetX - movedImage.offsetX + (img.width/2);
-        let newY = e.nativeEvent.offsetY - movedImage.offsetY + (img.height/2);
+        if (img.id === movedImage.id) {
+            const parentLayer = document.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLElement;
+            if (!parentLayer) return img;
 
-        // Constrain movement within the layer bounds
-        const halfWidth = img.width / 2;
-        const halfHeight = img.height / 2;
+            const layerRect = parentLayer.getBoundingClientRect();
+            
+            let newX = e.clientX - layerRect.left - movedImage.offsetX;
+            let newY = e.clientY - layerRect.top - movedImage.offsetY;
 
-        newX = Math.max(halfWidth, Math.min(newX, layerRect.width - halfWidth));
-        newY = Math.max(halfHeight, Math.min(newY, layerRect.height - halfHeight));
+            // Constrain movement within the layer bounds
+            newX = Math.max(0, Math.min(newX, layerRect.width - img.width));
+            newY = Math.max(0, Math.min(newY, layerRect.height - img.height));
 
-        return { ...img, x: newX, y: newY };
-      }
-      return img;
+            return { ...img, x: newX, y: newY };
+        }
+        return img;
     }));
-  };
+  }, [movedImage]);
+  
+  const handleMouseUp = useCallback(() => {
+    setMovedImage(null);
+  }, []);
 
-  const handleMouseUpOnLayer = (e: ReactMouseEvent<HTMLDivElement>) => {
+  useEffect(() => {
     if (movedImage) {
-        e.preventDefault();
-        e.stopPropagation();
-        setMovedImage(null);
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
     }
-  };
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [movedImage, handleMouseMove, handleMouseUp]);
+
+  useEffect(() => {
+    if (!isMounted || movedImage) return; // Pause auto-move when dragging
+
+    const intervalId = setInterval(() => {
+      setDroppedImages(currentImages => {
+        if (currentImages.length === 0) return [];
+        
+        return currentImages.map(img => {
+          const parentLayer = document.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLElement;
+          if (!parentLayer) return img;
+          
+          const layerRect = parentLayer.getBoundingClientRect();
+          const moveX = (Math.random() - 0.5) * 4; // Move up to 2px in either x direction
+          const moveY = (Math.random() - 0.5) * 4; // Move up to 2px in either y direction
+
+          let newX = img.x + moveX;
+          let newY = img.y + moveY;
+          
+          // Constrain movement within the layer bounds
+          newX = Math.max(0, Math.min(newX, layerRect.width - img.width));
+          newY = Math.max(0, Math.min(newY, layerRect.height - img.height));
+
+          return { ...img, x: newX, y: newY };
+        });
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isMounted, movedImage]);
+
 
   if (!isMounted) {
     return (
@@ -202,9 +248,6 @@ export default function ScenePage() {
               title={config.title}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, config.name)}
-              onMouseMove={(e) => handleMouseMoveOnLayer(e, config.name)}
-              onMouseUp={handleMouseUpOnLayer}
-              onMouseLeave={handleMouseUpOnLayer}
             >
               {droppedImages
                 .filter(img => img.layer === config.name)
@@ -212,7 +255,7 @@ export default function ScenePage() {
                   <div 
                     key={img.id} 
                     className={cn(
-                      "absolute group",
+                      "absolute group transition-all duration-1000 ease-linear",
                       movedImage?.id === img.id ? "cursor-grabbing z-30" : "cursor-grab z-20"
                     )}
                     style={{ 
@@ -220,7 +263,6 @@ export default function ScenePage() {
                       top: img.y, 
                       width: img.width, 
                       height: img.height,
-                      transform: 'translate(-50%, -50%)' 
                     }}
                     onMouseDown={(e) => handleMouseDownOnImage(e, img)}
                   >
@@ -230,7 +272,7 @@ export default function ScenePage() {
                       width={img.width}
                       height={img.height}
                       className={cn(
-                        "object-contain pointer-events-none",
+                        "object-contain pointer-events-none w-full h-full",
                          movedImage?.id === img.id && "opacity-75"
                       )}
                     />
@@ -264,3 +306,5 @@ export default function ScenePage() {
     </div>
   );
 }
+
+    
