@@ -211,11 +211,11 @@ export default function ScenePage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-background relative overflow-hidden">
+    <div className="h-[calc(100vh-4rem)] bg-background flex flex-col overflow-hidden">
         
       <div 
         className={cn(
-          "absolute top-0 left-0 h-full w-80 bg-background/80 backdrop-blur-sm z-30 transition-transform duration-300 ease-in-out",
+          "absolute top-16 left-0 h-[calc(100vh-4rem)] w-80 bg-background/80 backdrop-blur-sm z-30 transition-transform duration-300 ease-in-out",
           isPanelOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -246,7 +246,7 @@ export default function ScenePage() {
         </Card>
       </div>
 
-      <div className="w-full h-full relative overflow-hidden">
+      <div className="w-full flex-grow relative overflow-hidden">
         <div className="absolute inset-0 flex w-[200%] animate-marquee">
             <div className="w-1/2 h-full flex-shrink-0 relative">
               <Image
