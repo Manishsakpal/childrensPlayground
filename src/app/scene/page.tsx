@@ -235,7 +235,7 @@ export default function ScenePage() {
               <Image
                 src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
                 alt="Scene background"
-                layout="fill"
+                fill
                 className="object-cover w-full h-full"
                 priority
               />
@@ -244,7 +244,7 @@ export default function ScenePage() {
               <Image
                 src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
                 alt="Scene background"
-                layout="fill"
+                fill
                 className="object-cover w-full h-full"
                 priority
                 aria-hidden="true"
@@ -262,7 +262,6 @@ export default function ScenePage() {
                 config.hoverClass
               )}
               style={config.style}
-              title={config.title}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, config.name)}
             >
