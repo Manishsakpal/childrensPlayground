@@ -45,7 +45,7 @@ export default function ScenePage() {
     setIsMounted(true);
   }, []);
 
-  const layerConfigs: { name: LayerName; style: React.CSSProperties }[] = [
+  const layerConfigs: { name: LayerName; style: React.CSSProperties; }[] = [
     { name: 'sky', style: { top: '0%', height: '25%' } },
     { name: 'trees', style: { top: '25%', height: '30%' } },
     { name: 'land', style: { top: '55%', height: '27%' } },
@@ -54,6 +54,7 @@ export default function ScenePage() {
   
   const handleDragStart = (e: DragEvent<HTMLImageElement>, src: string) => {
     setDraggedItem({ src });
+    setIsPanelOpen(false);
   };
   
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -74,7 +75,6 @@ export default function ScenePage() {
     ]);
 
     setDraggedItem(null);
-    setIsPanelOpen(false);
   };
   
   const handleDeleteImage = (id: string) => {
@@ -173,8 +173,8 @@ export default function ScenePage() {
           if (!parentLayer) return img;
           
           const layerRect = parentLayer.getBoundingClientRect();
-          const moveX = (Math.random() - 0.5) * 200;
-          const moveY = (Math.random() - 0.5) * 200;
+          const moveX = (Math.random() - 0.5) * 100;
+          const moveY = (Math.random() - 0.5) * 100;
 
           let newX = img.x + moveX;
           let newY = img.y + moveY;
@@ -200,10 +200,15 @@ export default function ScenePage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-background">
+    <div className="h-[calc(100vh-4rem)] bg-background relative overflow-hidden">
         
-      {isPanelOpen && (
-        <Card className="w-80 h-full rounded-none border-0 border-r-2 z-20">
+      <div 
+        className={cn(
+          "absolute top-0 left-0 h-full w-80 bg-background/80 backdrop-blur-sm z-30 transition-transform duration-300 ease-in-out",
+          isPanelOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <Card className="w-full h-full rounded-none border-0 border-r bg-transparent shadow-none">
           <CardHeader>
             <CardTitle>Your Creations</CardTitle>
             <CardDescription>Drag a drawing onto a layer.</CardDescription>
@@ -228,9 +233,9 @@ export default function ScenePage() {
             </ScrollArea>
           </CardContent>
         </Card>
-      )}
+      </div>
 
-      <div className="flex-1 w-full h-full relative overflow-hidden">
+      <div className="w-full h-full relative overflow-hidden">
         <div className="absolute inset-0 flex w-[200%] animate-marquee">
             <div className="w-1/2 h-full flex-shrink-0 relative">
               <Image
@@ -277,7 +282,7 @@ export default function ScenePage() {
                       top: img.y, 
                       width: img.width, 
                       height: img.height,
-                      transition: isMovementEnabled && !movedImage && !img.isPaused ? 'left 1s ease-in-out, top 1s ease-in-out' : 'none'
+                      transition: isMovementEnabled && !movedImage && !img.isPaused ? `left ${1/movementMultiplier}s ease-in-out, top ${1/movementMultiplier}s ease-in-out` : 'none'
                     }}
                     onMouseDown={(e) => handleMouseDownOnImage(e, img)}
                     onMouseEnter={() => setHoveredImageId(img.id)}
