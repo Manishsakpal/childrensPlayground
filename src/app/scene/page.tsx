@@ -31,14 +31,14 @@ export default function ScenePage() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background">
-      <div className="flex-1 relative overflow-hidden">
-        <div className="absolute inset-0 w-[200%] h-full whitespace-nowrap animate-scroll-left">
+      <div className="w-full h-full relative overflow-hidden">
+        <div className="absolute inset-0 flex animate-scroll-left">
           <Image
             src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
             alt="Scene background"
             width={3840}
             height={1080}
-            className="w-1/2 h-full object-contain inline-block"
+            className="flex-shrink-0 w-full h-full object-contain"
             priority
           />
           <Image
@@ -46,7 +46,7 @@ export default function ScenePage() {
             alt="Scene background"
             width={3840}
             height={1080}
-            className="w-1/2 h-full object-contain inline-block"
+            className="flex-shrink-0 w-full h-full object-contain"
             priority
             aria-hidden="true"
           />
