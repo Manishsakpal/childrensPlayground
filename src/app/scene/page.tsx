@@ -9,9 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Plus, XCircle, MinusCircle, PlusCircle, Play, Pause } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { useSceneContext } from "@/contexts/SceneContext";
 
 type LayerName = 'sky' | 'trees' | 'land' | 'water';
 
@@ -39,9 +37,9 @@ export default function ScenePage() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [draggedItem, setDraggedItem] = useState<{ src: string } | null>(null);
   const [movedImage, setMovedImage] = useState<MovedImageState | null>(null);
-  const [movementMultiplier, setMovementMultiplier] = useState(1);
-  const [isMovementEnabled, setIsMovementEnabled] = useState(true);
   const [hoveredImageId, setHoveredImageId] = useState<string | null>(null);
+  
+  const { movementMultiplier, isMovementEnabled } = useSceneContext();
 
   useEffect(() => {
     setIsMounted(true);
@@ -167,7 +165,7 @@ export default function ScenePage() {
         if (currentImages.length === 0) return [];
         
         return currentImages.map(img => {
-          if (img.id === hoveredImageId || img.isPaused) {
+          if (img.isPaused || img.id === hoveredImageId || movedImage?.id === img.id) {
             return img; 
           }
 
@@ -233,29 +231,6 @@ export default function ScenePage() {
       )}
 
       <div className="flex-1 w-full h-full relative overflow-hidden">
-        <div className="absolute top-4 left-4 z-20 bg-background/80 p-2 rounded-lg shadow-md flex items-center gap-4">
-            <div className="flex items-center gap-2">
-                <Label htmlFor="movement-switch" className="text-sm whitespace-nowrap text-muted-foreground">Move</Label>
-                <Switch 
-                id="movement-switch"
-                checked={isMovementEnabled}
-                onCheckedChange={setIsMovementEnabled}
-                />
-            </div>
-            <div className="flex items-center gap-2">
-                <Label htmlFor="multiplier" className="text-sm whitespace-nowrap text-muted-foreground">Speed:</Label>
-                <Input 
-                    id="multiplier"
-                    type="number"
-                    value={movementMultiplier}
-                    onChange={(e) => setMovementMultiplier(Number(e.target.value))}
-                    className="w-20 h-8"
-                    min="0.1"
-                    step="0.1"
-                />
-            </div>
-        </div>
-
         <div className="absolute inset-0 flex w-[200%] animate-marquee">
             <div className="w-1/2 h-full flex-shrink-0 relative">
               <Image
@@ -283,7 +258,7 @@ export default function ScenePage() {
             <div
               key={config.name}
               data-layer-name={config.name}
-              className="absolute left-0 w-full border-2 border-transparent"
+              className="absolute left-0 w-full"
               style={config.style}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, config.name)}
@@ -302,7 +277,7 @@ export default function ScenePage() {
                       top: img.y, 
                       width: img.width, 
                       height: img.height,
-                      transition: isMovementEnabled && !movedImage ? 'left 1s ease-in-out, top 1s ease-in-out' : 'none'
+                      transition: isMovementEnabled && !movedImage && !img.isPaused ? 'left 1s ease-in-out, top 1s ease-in-out' : 'none'
                     }}
                     onMouseDown={(e) => handleMouseDownOnImage(e, img)}
                     onMouseEnter={() => setHoveredImageId(img.id)}

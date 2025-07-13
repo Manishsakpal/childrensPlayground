@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/header";
 import { Inter } from "next/font/google";
+import { SceneProvider } from "@/contexts/SceneContext";
 
 export const metadata: Metadata = {
   title: "Layered Canvas",
@@ -22,9 +23,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased">
-        <Header />
-        <main className="flex-grow">{children}</main>
-        <Toaster />
+        <SceneProvider>
+          <Header />
+          <main className="flex-grow">{children}</main>
+          <Toaster />
+        </SceneProvider>
       </body>
     </html>
   );
