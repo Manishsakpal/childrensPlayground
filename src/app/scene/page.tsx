@@ -30,12 +30,18 @@ interface MovedImageState {
   offsetY: number;
 }
 
+interface DraggedItem {
+  src: string;
+  offsetX: number;
+  offsetY: number;
+}
+
 export default function ScenePage() {
   const [isMounted, setIsMounted] = useState(false);
   const [savedCreations] = useLocalStorage<string[]>("saved-creations", []);
   const [droppedImages, setDroppedImages] = useState<DroppedImage[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [draggedItem, setDraggedItem] = useState<{ src: string } | null>(null);
+  const [draggedItem, setDraggedItem] = useState<DraggedItem | null>(null);
   const [movedImage, setMovedImage] = useState<MovedImageState | null>(null);
   const [hoveredImageId, setHoveredImageId] = useState<string | null>(null);
   
@@ -53,7 +59,12 @@ export default function ScenePage() {
   ];
   
   const handleDragStart = (e: DragEvent<HTMLImageElement>, src: string) => {
-    setDraggedItem({ src });
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDraggedItem({ 
+      src,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+    });
     setIsPanelOpen(false);
   };
   
@@ -66,8 +77,8 @@ export default function ScenePage() {
     if (!draggedItem) return;
 
     const layerRect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - layerRect.left;
-    const y = e.clientY - layerRect.top;
+    const x = e.clientX - layerRect.left - draggedItem.offsetX;
+    const y = e.clientY - layerRect.top - draggedItem.offsetY;
 
     setDroppedImages(prev => [
       ...prev,
@@ -298,7 +309,7 @@ export default function ScenePage() {
                          movedImage?.id === img.id && "opacity-75"
                       )}
                     />
-                     <div className="absolute -top-2 -right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                     <div className="absolute -top-2 -right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-40">
                        <Button
                         variant="outline"
                         size="icon"
