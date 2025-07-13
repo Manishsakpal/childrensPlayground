@@ -24,6 +24,7 @@ interface DroppedImage {
 
 interface MovedImageState {
   id: string;
+  layerName: LayerName;
   offsetX: number;
   offsetY: number;
 }
@@ -69,6 +70,7 @@ export default function ScenePage() {
     ]);
 
     setDraggedItem(null);
+    setIsPanelOpen(false);
   };
   
   const handleDeleteImage = (id: string) => {
@@ -76,32 +78,33 @@ export default function ScenePage() {
   };
   
   const handleMouseDownOnImage = (e: ReactMouseEvent<HTMLDivElement>, img: DroppedImage) => {
-    // Prevent starting a move if the click is on the delete button
     if ((e.target as HTMLElement).closest('button')) {
       return;
     }
     e.preventDefault();
+    e.stopPropagation();
+    
     setMovedImage({
       id: img.id,
-      offsetX: e.clientX - img.x,
-      offsetY: e.clientY - img.y,
+      layerName: img.layer,
+      offsetX: e.nativeEvent.offsetX,
+      offsetY: e.nativeEvent.offsetY,
     });
   };
+  
+  const handleMouseMoveOnLayer = (e: ReactMouseEvent<HTMLDivElement>, layerName: LayerName) => {
+    if (!movedImage || movedImage.layerName !== layerName) return;
 
-  const handleMouseMove = (e: ReactMouseEvent<HTMLDivElement>) => {
-    if (!movedImage) return;
-    
     e.preventDefault();
+    e.stopPropagation();
 
+    const layerRect = e.currentTarget.getBoundingClientRect();
+    
     setDroppedImages(prev => prev.map(img => {
       if (img.id === movedImage.id) {
-        const layerEl = e.currentTarget.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLDivElement;
-        if (!layerEl) return img;
-
-        const layerRect = layerEl.getBoundingClientRect();
         
-        let newX = e.clientX - movedImage.offsetX;
-        let newY = e.clientY - movedImage.offsetY;
+        let newX = e.nativeEvent.offsetX - movedImage.offsetX + (img.width/2);
+        let newY = e.nativeEvent.offsetY - movedImage.offsetY + (img.height/2);
 
         // Constrain movement within the layer bounds
         const halfWidth = img.width / 2;
@@ -116,13 +119,13 @@ export default function ScenePage() {
     }));
   };
 
-  const handleMouseUp = (e: ReactMouseEvent<HTMLDivElement>) => {
+  const handleMouseUpOnLayer = (e: ReactMouseEvent<HTMLDivElement>) => {
     if (movedImage) {
         e.preventDefault();
+        e.stopPropagation();
         setMovedImage(null);
     }
   };
-
 
   if (!isMounted) {
     return (
@@ -163,29 +166,29 @@ export default function ScenePage() {
         </Card>
       )}
 
-      <div className="flex-1 w-full h-full relative overflow-hidden" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+      <div className="flex-1 w-full h-full relative overflow-hidden">
         <div className="absolute inset-0 flex w-[200%] animate-marquee">
-          <div className="w-1/2 h-full flex-shrink-0 relative">
-            <Image
-              src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-              alt="Scene background"
-              layout="fill"
-              objectFit="cover"
-              className="w-full h-full"
-              priority
-            />
-          </div>
-          <div className="w-1/2 h-full flex-shrink-0 relative">
-            <Image
-              src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-              alt="Scene background"
-              layout="fill"
-              objectFit="cover"
-              className="w-full h-full"
-              priority
-              aria-hidden="true"
-            />
-          </div>
+            <div className="w-1/2 h-full flex-shrink-0 relative">
+              <Image
+                src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+                alt="Scene background"
+                layout="fill"
+                objectCover="cover"
+                className="w-full h-full"
+                priority
+              />
+            </div>
+            <div className="w-1/2 h-full flex-shrink-0 relative">
+              <Image
+                src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+                alt="Scene background"
+                layout="fill"
+                objectCover="cover"
+                className="w-full h-full"
+                priority
+                aria-hidden="true"
+              />
+            </div>
         </div>
 
         <div className="absolute inset-0 z-10">
@@ -201,6 +204,9 @@ export default function ScenePage() {
               title={config.title}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, config.name)}
+              onMouseMove={(e) => handleMouseMoveOnLayer(e, config.name)}
+              onMouseUp={handleMouseUpOnLayer}
+              onMouseLeave={handleMouseUpOnLayer}
             >
               {droppedImages
                 .filter(img => img.layer === config.name)
@@ -208,8 +214,8 @@ export default function ScenePage() {
                   <div 
                     key={img.id} 
                     className={cn(
-                      "absolute group cursor-grab",
-                      movedImage?.id === img.id && "cursor-grabbing"
+                      "absolute group",
+                      movedImage?.id === img.id ? "cursor-grabbing z-30" : "cursor-grab z-20"
                     )}
                     style={{ 
                       left: img.x, 
@@ -260,5 +266,3 @@ export default function ScenePage() {
     </div>
   );
 }
-
-    
