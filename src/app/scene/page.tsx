@@ -44,11 +44,11 @@ export default function ScenePage() {
     setIsMounted(true);
   }, []);
 
-  const layerConfigs: { name: LayerName; style: React.CSSProperties; title: string; hoverClass: string }[] = [
-    { name: 'sky', style: { top: '0%', height: '25%' }, title: 'Sky Layer (25%)', hoverClass: 'hover:border-blue-300 hover:bg-blue-300/10' },
-    { name: 'trees', style: { top: '25%', height: '30%' }, title: 'Trees Layer (30%)', hoverClass: 'hover:border-green-400 hover:bg-green-400/10' },
-    { name: 'land', style: { top: '55%', height: '27%' }, title: 'Green Land Layer (27%)', hoverClass: 'hover:border-yellow-400 hover:bg-yellow-400/10' },
-    { name: 'water', style: { top: '82%', height: '18%' }, title: 'Water Layer (18%)', hoverClass: 'hover:border-cyan-400 hover:bg-cyan-400/10' },
+  const layerConfigs: { name: LayerName; style: React.CSSProperties }[] = [
+    { name: 'sky', style: { top: '0%', height: '25%' } },
+    { name: 'trees', style: { top: '25%', height: '30%' } },
+    { name: 'land', style: { top: '55%', height: '27%' } },
+    { name: 'water', style: { top: '82%', height: '18%' } },
   ];
   
   const handleDragStart = (e: DragEvent<HTMLImageElement>, src: string) => {
@@ -257,10 +257,7 @@ export default function ScenePage() {
             <div
               key={config.name}
               data-layer-name={config.name}
-              className={cn(
-                "absolute left-0 w-full border-2 border-transparent transition-all duration-300",
-                config.hoverClass
-              )}
+              className="absolute left-0 w-full border-2 border-transparent"
               style={config.style}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, config.name)}
