@@ -6,13 +6,23 @@ import Image from "next/image";
 import { Toolbox } from "@/components/toolbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { GripVertical, Layers, Plus, Trash2, Eye, EyeOff } from "lucide-react";
+import { GripVertical, Layers, Plus, Trash2, Eye, EyeOff, Move } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import {
+  Sidebar,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarContent,
+  SidebarHeader,
+  SidebarGroup,
+  SidebarGroupContent
+} from "@/components/ui/sidebar";
 
 const CANVAS_WIDTH = 1920;
 const CANVAS_HEIGHT = 1080;
 
-type Tool = "pen" | "fill" | "eraser";
+type Tool = "pen" | "fill" | "eraser" | "move";
 type Layer = {
   id: number;
   name: string;
@@ -20,6 +30,11 @@ type Layer = {
   history: ImageData[];
   historyIndex: number;
   isVisible: boolean;
+  transform: {
+    x: number;
+    y: number;
+    scale: number;
+  };
 };
 
 export default function StudioPage() {
@@ -30,9 +45,16 @@ export default function StudioPage() {
   const [layers, setLayers] = useState<Layer[]>([]);
   const [activeLayerId, setActiveLayerId] = useState<number | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+
+  const [savedCreations] = useLocalStorage<string[]>("saved-creations", []);
   
-  const addLayer = () => {
+  const addLayer = useCallback((imageDataUrl?: string) => {
     const newId = layers.length > 0 ? Math.max(...layers.map(l => l.id)) + 1 : 1;
+    
     const newLayer: Layer = {
       id: newId,
       name: `Layer ${newId}`,
@@ -40,25 +62,59 @@ export default function StudioPage() {
       history: [],
       historyIndex: -1,
       isVisible: true,
+      transform: { x: 0, y: 0, scale: 1 },
     };
-    setLayers(prev => [...prev, newLayer]);
-    setActiveLayerId(newId);
-  };
+
+    const initializeLayer = (img?: HTMLImageElement) => {
+      const canvas = newLayer.canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            let initialImageData;
+            if (img) {
+              // Draw the image, then save history
+              ctx.drawImage(img, 0, 0);
+              initialImageData = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            } else {
+              // For a blank layer, save the empty state
+              initialImageData = ctx.createImageData(CANVAS_WIDTH, CANVAS_HEIGHT);
+            }
+
+            newLayer.history = [initialImageData];
+            newLayer.historyIndex = 0;
+
+            setLayers(prev => [...prev, newLayer]);
+            setActiveLayerId(newId);
+        }
+      }
+    };
+    
+    if (imageDataUrl) {
+        const img = new window.Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          initializeLayer(img);
+        };
+        img.src = imageDataUrl;
+    } else {
+        // We need to wait for the canvas ref to be available
+        setTimeout(() => initializeLayer(), 0);
+    }
+  }, [layers]);
   
   useEffect(() => {
     if (layers.length === 0) {
         addLayer();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers.length]);
+  }, [layers.length, addLayer]);
 
   const getActiveLayer = useCallback(() => {
     return layers.find(l => l.id === activeLayerId);
   }, [layers, activeLayerId]);
 
-  const updateLayerHistory = useCallback((layer: Layer, newHistory: ImageData[], newIndex: number) => {
+  const updateLayerHistory = useCallback((layerId: number, newHistory: ImageData[], newIndex: number) => {
     setLayers(currentLayers => currentLayers.map(l => 
-        l.id === layer.id ? { ...l, history: newHistory, historyIndex: newIndex } : l
+        l.id === layerId ? { ...l, history: newHistory, historyIndex: newIndex } : l
     ));
   }, []);
 
@@ -79,37 +135,55 @@ export default function StudioPage() {
     }
     
     const updatedHistory = [...newHistory, newImageData];
-    updateLayerHistory(activeLayer, updatedHistory, updatedHistory.length - 1);
+    updateLayerHistory(activeLayer.id, updatedHistory, updatedHistory.length - 1);
   }, [getActiveLayer, updateLayerHistory]);
 
-  const restoreFromHistory = useCallback(() => {
-    const activeLayer = getActiveLayer();
-    if (!activeLayer || !activeLayer.canvasRef.current || activeLayer.history.length === 0 || activeLayer.historyIndex < 0) return;
-    const context = activeLayer.canvasRef.current.getContext("2d");
+  const restoreFromHistory = useCallback((layer: Layer) => {
+    if (!layer.canvasRef.current || layer.history.length === 0 || layer.historyIndex < 0) return;
+    const context = layer.canvasRef.current.getContext("2d", { willReadFrequently: true });
     if (!context) return;
     context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    context.putImageData(activeLayer.history[activeLayer.historyIndex], 0, 0);
-  }, [getActiveLayer]);
+    context.putImageData(layer.history[layer.historyIndex], 0, 0);
+  }, []);
 
   useEffect(() => {
-    restoreFromHistory();
-  }, [getActiveLayer, restoreFromHistory]);
-  
-  const startDrawing = (e: React.MouseEvent<HTMLDivElement>) => {
+    layers.forEach(layer => {
+      if(layer.historyIndex >= 0) {
+        restoreFromHistory(layer);
+      }
+    })
+  }, [layers, restoreFromHistory]);
+
+  const startInteraction = (e: React.MouseEvent<HTMLDivElement>) => {
     const activeLayer = getActiveLayer();
     if (!activeLayer || !activeLayer.canvasRef.current || !activeLayer.isVisible) return;
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    
+    const rect = viewport.getBoundingClientRect();
+    const x = (e.clientX - rect.left);
+    const y = (e.clientY - rect.top);
+    
+    if (tool === 'move') {
+      setIsDragging(true);
+      dragStartPos.current = { 
+        x: x - activeLayer.transform.x, 
+        y: y - activeLayer.transform.y 
+      };
+      return;
+    }
+    
     const context = activeLayer.canvasRef.current.getContext("2d");
     if (!context) return;
-    
-    const rect = activeLayer.canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+
+    const layerX = (x - activeLayer.transform.x) / activeLayer.transform.scale;
+    const layerY = (y - activeLayer.transform.y) / activeLayer.transform.scale;
 
     if (tool === "pen" || tool === "eraser") {
       setIsDrawing(true);
       context.beginPath();
-      context.moveTo(x, y);
-      context.lineWidth = penSize;
+      context.moveTo(layerX, layerY);
+      context.lineWidth = penSize / activeLayer.transform.scale;
       context.lineCap = "round";
       context.lineJoin = "round";
       
@@ -122,32 +196,50 @@ export default function StudioPage() {
     }
   };
 
-  const draw = (e: React.MouseEvent<HTMLDivElement>) => {
+  const onInteract = (e: React.MouseEvent<HTMLDivElement>) => {
     const activeLayer = getActiveLayer();
-    if (!isDrawing || !activeLayer || !activeLayer.canvasRef.current || !activeLayer.isVisible || (tool !== "pen" && tool !== "eraser")) return;
-    const context = activeLayer.canvasRef.current.getContext("2d");
-    if (!context) return;
+    if (!activeLayer || !activeLayer.canvasRef.current || !activeLayer.isVisible) return;
+    const viewport = viewportRef.current;
+    if (!viewport) return;
 
-    const rect = activeLayer.canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const rect = viewport.getBoundingClientRect();
+    const x = (e.clientX - rect.left);
+    const y = (e.clientY - rect.top);
 
-    context.lineTo(x, y);
-    context.stroke();
+    if (isDragging && tool === 'move') {
+      setLayers(layers => layers.map(l => 
+        l.id === activeLayerId 
+          ? { ...l, transform: { ...l.transform, x: x - dragStartPos.current.x, y: y - dragStartPos.current.y } } 
+          : l
+      ));
+      return;
+    }
+    
+    if (isDrawing && (tool === "pen" || tool === "eraser")) {
+      const context = activeLayer.canvasRef.current.getContext("2d");
+      if (!context) return;
+      const layerX = (x - activeLayer.transform.x) / activeLayer.transform.scale;
+      const layerY = (y - activeLayer.transform.y) / activeLayer.transform.scale;
+      context.lineTo(layerX, layerY);
+      context.stroke();
+    }
   };
 
-  const stopDrawing = () => {
-    const activeLayer = getActiveLayer();
-    if (!activeLayer || !activeLayer.canvasRef.current) return;
-    const context = activeLayer.canvasRef.current.getContext("2d");
-    if (!context) return;
-
-    if (isDrawing) {
-       context.closePath();
-       setIsDrawing(false);
-       saveToHistory();
+  const stopInteraction = () => {
+    if (isDragging) {
+      setIsDragging(false);
     }
-    context.globalCompositeOperation = "source-over";
+    
+    if (isDrawing) {
+      const activeLayer = getActiveLayer();
+      if (!activeLayer || !activeLayer.canvasRef.current) return;
+      const context = activeLayer.canvasRef.current.getContext("2d");
+      if (!context) return;
+      context.closePath();
+      setIsDrawing(false);
+      saveToHistory();
+      context.globalCompositeOperation = "source-over";
+    }
   };
   
   const clearCanvas = () => {
@@ -159,20 +251,28 @@ export default function StudioPage() {
     saveToHistory();
   };
 
+  const updateLayerState = (layerId: number, update: Partial<Layer>) => {
+      setLayers(current => current.map(l => l.id === layerId ? {...l, ...update} : l));
+  }
+
   const undo = () => {
     const activeLayer = getActiveLayer();
     if (activeLayer && activeLayer.historyIndex > 0) {
-      updateLayerHistory(activeLayer, activeLayer.history, activeLayer.historyIndex - 1);
+      const newIndex = activeLayer.historyIndex - 1;
+      updateLayerState(activeLayer.id, { historyIndex: newIndex });
+      restoreFromHistory({ ...activeLayer, historyIndex: newIndex });
     }
   };
 
   const redo = () => {
     const activeLayer = getActiveLayer();
     if (activeLayer && activeLayer.historyIndex < activeLayer.history.length - 1) {
-      updateLayerHistory(activeLayer, activeLayer.history, activeLayer.historyIndex + 1);
+       const newIndex = activeLayer.historyIndex + 1;
+      updateLayerState(activeLayer.id, { historyIndex: newIndex });
+      restoreFromHistory({ ...activeLayer, historyIndex: newIndex });
     }
   };
-
+  
   const deleteLayer = (id: number) => {
     setLayers(prev => prev.filter(l => l.id !== id));
     if (activeLayerId === id) {
@@ -188,34 +288,80 @@ export default function StudioPage() {
   const activeLayer = getActiveLayer();
 
   return (
+    <SidebarProvider defaultOpen={false}>
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-800">
       <div className="flex-grow flex relative">
-        <div className="flex-grow flex items-center justify-center overflow-hidden">
+        
+        <Sidebar side="left" variant="floating" collapsible="icon">
+          <SidebarContent className="p-0">
+             <SidebarHeader>
+              <h3 className="font-semibold text-center">Creations</h3>
+            </SidebarHeader>
+            <SidebarGroup>
+                <SidebarGroupContent>
+                  <div className="grid grid-cols-2 gap-2 p-2 max-h-[calc(100vh-150px)] overflow-y-auto">
+                    {savedCreations.map((src, index) => (
+                      <div key={`${src.slice(0, 20)}-${index}`} className="relative group">
+                        <button
+                          onClick={() => addLayer(src)}
+                          className="block w-full h-full rounded-md overflow-hidden border-2 border-transparent hover:border-primary focus:border-primary focus:outline-none"
+                        >
+                          <Image
+                            src={src}
+                            alt={`Saved creation ${index + 1}`}
+                            width={150}
+                            height={112}
+                            className="object-cover w-full h-full"
+                          />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+
+        <div className="flex-grow flex items-center justify-center overflow-hidden relative">
+          <div className="absolute left-4 top-4 z-20">
+             <SidebarTrigger />
+          </div>
           <div 
-            className="relative" 
-            style={{ width: '100vw', height: `calc(100vw * ${CANVAS_HEIGHT} / ${CANVAS_WIDTH})`, maxWidth: `calc(100vh * ${CANVAS_WIDTH} / ${CANVAS_HEIGHT})`, maxHeight: '100vh'}}
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
+            ref={viewportRef}
+            className="relative bg-gray-700" 
+            style={{ 
+              width: `min(calc(100vw - 320px), calc((100vh - 64px) * ${CANVAS_WIDTH} / ${CANVAS_HEIGHT}))`,
+              height: `min(calc(100vh - 64px), calc((100vw - 320px) * ${CANVAS_HEIGHT} / ${CANVAS_WIDTH}))`,
+              cursor: tool === 'move' ? 'grab' : 'crosshair'
+            }}
+            onMouseDown={startInteraction}
+            onMouseMove={onInteract}
+            onMouseUp={stopInteraction}
+            onMouseLeave={stopInteraction}
           >
-            <div className="absolute inset-0 w-full h-full">
-              <div className="w-full h-full animate-scroll-left flex">
-                <Image
-                  src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-                  alt="Scrolling scene background"
-                  layout="fill"
-                  objectFit="cover"
-                  className="flex-shrink-0 min-w-full"
-                />
-                <Image
-                  src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-                  alt="Scrolling scene background"
-                  layout="fill"
-                  objectFit="cover"
-                  className="flex-shrink-0 min-w-full"
-                  aria-hidden="true"
-                />
+            <div className="absolute inset-0 w-full h-full overflow-hidden">
+              <div 
+                className="w-[200%] h-full flex"
+                style={{ animation: "scroll-left 40s linear infinite" }}
+              >
+                <div className="relative w-1/2 h-full">
+                  <Image
+                    src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+                    alt="Scrolling scene background"
+                    layout="fill"
+                    objectFit="cover"
+                    priority
+                  />
+                </div>
+                <div className="relative w-1/2 h-full">
+                  <Image
+                    src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+                    alt="Scrolling scene background"
+                    layout="fill"
+                    objectFit="cover"
+                    aria-hidden="true"
+                  />
+                </div>
               </div>
             </div>
 
@@ -225,9 +371,13 @@ export default function StudioPage() {
                 ref={layer.canvasRef}
                 width={CANVAS_WIDTH}
                 height={CANVAS_HEIGHT}
-                className={cn("absolute inset-0 w-full h-full pointer-events-none", {
+                className={cn("absolute top-0 left-0 pointer-events-none origin-top-left", {
                     'opacity-0': !layer.isVisible,
+                    'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-800': activeLayerId === layer.id && tool === 'move'
                 })}
+                style={{
+                  transform: `translate(${layer.transform.x}px, ${layer.transform.y}px) scale(${layer.transform.scale})`,
+                }}
               />
             ))}
           </div>
@@ -255,7 +405,7 @@ export default function StudioPage() {
                             <Layers className="h-5 w-5" />
                             <h3 className="font-semibold">Layers</h3>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={addLayer}>
+                        <Button variant="ghost" size="icon" onClick={() => addLayer()}>
                             <Plus className="h-5 w-5" />
                         </Button>
                     </div>
@@ -269,11 +419,11 @@ export default function StudioPage() {
                                 onClick={() => setActiveLayerId(layer.id)}
                             >
                                 <GripVertical className="h-5 w-5 text-muted-foreground" />
-                                <span className="flex-grow">{layer.name}</span>
-                                <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); toggleLayerVisibility(layer.id);}}>
+                                <span className="flex-grow truncate">{layer.name}</span>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); toggleLayerVisibility(layer.id);}}>
                                     {layer.isVisible ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5 text-muted-foreground" />}
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); deleteLayer(layer.id);}}>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); deleteLayer(layer.id);}}>
                                     <Trash2 className="h-5 w-5 text-destructive" />
                                 </Button>
                             </div>
@@ -284,5 +434,6 @@ export default function StudioPage() {
         </div>
       </div>
     </div>
+    </SidebarProvider>
   );
 }

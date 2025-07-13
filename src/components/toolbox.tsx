@@ -11,6 +11,7 @@ import {
   Minus,
   Plus,
   Eraser,
+  Move,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,7 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-type Tool = "pen" | "fill" | "eraser";
+type Tool = "pen" | "fill" | "eraser" | "move";
 
 interface ToolboxProps {
   tool: Tool;
@@ -106,6 +107,23 @@ export function Toolbox({
                     <p>Eraser</p>
                 </TooltipContent>
                 </Tooltip>
+
+                {isStudio && (
+                    <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                        variant={tool === "move" ? "secondary" : "outline"}
+                        size="icon"
+                        onClick={() => setTool("move")}
+                        >
+                        <Move className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Move Layer (V)</p>
+                    </TooltipContent>
+                    </Tooltip>
+                )}
             </div>
 
 
