@@ -25,11 +25,9 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased">
         <SceneProvider>
-          <div className="flex flex-col h-screen">
-            <Header />
-            <main className="flex-1 overflow-auto">{children}</main>
-            <Toaster />
-          </div>
+          <Header />
+          <main>{children}</main>
+          <Toaster />
         </SceneProvider>
       </body>
     </html>

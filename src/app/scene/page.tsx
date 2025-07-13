@@ -117,10 +117,15 @@ export default function ScenePage() {
     e.preventDefault();
     e.stopPropagation();
     
+    const layerElement = (e.currentTarget as HTMLElement).parentElement;
+    if (!layerElement) return;
+
+    const layerRect = layerElement.getBoundingClientRect();
+    
     setMovedImage({
       id: img.id,
-      offsetX: e.clientX - img.x,
-      offsetY: e.clientY - img.y,
+      offsetX: e.clientX - layerRect.left - img.x,
+      offsetY: e.clientY - layerRect.top - img.y,
     });
   };
 
@@ -137,8 +142,8 @@ export default function ScenePage() {
 
         const layerRect = parentLayer.getBoundingClientRect();
         
-        let newX = e.clientX - movedImage.offsetX;
-        let newY = e.clientY - movedImage.offsetY;
+        let newX = e.clientX - layerRect.left - movedImage.offsetX;
+        let newY = e.clientY - layerRect.top - movedImage.offsetY;
 
         newX = Math.max(0, Math.min(newX, layerRect.width - img.width));
         newY = Math.max(0, Math.min(newY, layerRect.height - img.height));
@@ -155,12 +160,12 @@ export default function ScenePage() {
 
   useEffect(() => {
     if (movedImage) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
 
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
       };
     }
   }, [movedImage, handleMouseMove, handleMouseUp]);
@@ -211,7 +216,7 @@ export default function ScenePage() {
   }
 
   return (
-    <div className="bg-background overflow-hidden relative h-full">
+    <div className="bg-background overflow-hidden fixed inset-0 top-16">
       <div 
         className={cn(
           "absolute top-0 left-0 h-full w-80 bg-background/80 backdrop-blur-sm z-30 transition-transform duration-300 ease-in-out",
