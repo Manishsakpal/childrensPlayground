@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, DragEvent } from "react";
+import React, { useState, useEffect, DragEvent, MouseEvent as ReactMouseEvent } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -18,6 +18,14 @@ interface DroppedImage {
   layer: LayerName;
   x: number;
   y: number;
+  width: number;
+  height: number;
+}
+
+interface MovedImageState {
+  id: string;
+  offsetX: number;
+  offsetY: number;
 }
 
 export default function ScenePage() {
@@ -26,11 +34,12 @@ export default function ScenePage() {
   const [droppedImages, setDroppedImages] = useState<DroppedImage[]>([]);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [draggedItem, setDraggedItem] = useState<{ src: string } | null>(null);
+  const [movedImage, setMovedImage] = useState<MovedImageState | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
+  
   const layerConfigs: { name: LayerName; style: React.CSSProperties; title: string; hoverClass: string }[] = [
     { name: 'sky', style: { top: '0%', height: '25%' }, title: 'Sky Layer (25%)', hoverClass: 'hover:border-blue-300 hover:bg-blue-300/10' },
     { name: 'trees', style: { top: '25%', height: '30%' }, title: 'Trees Layer (30%)', hoverClass: 'hover:border-green-400 hover:bg-green-400/10' },
@@ -56,15 +65,62 @@ export default function ScenePage() {
 
     setDroppedImages(prev => [
       ...prev,
-      { id: `${Date.now()}-${Math.random()}`, src: draggedItem.src, layer, x, y }
+      { id: `${Date.now()}-${Math.random()}`, src: draggedItem.src, layer, x, y, width: 100, height: 75 }
     ]);
 
     setDraggedItem(null);
-    setIsPanelOpen(false); // Close panel after drop
   };
   
   const handleDeleteImage = (id: string) => {
     setDroppedImages(prev => prev.filter(img => img.id !== id));
+  };
+  
+  const handleMouseDownOnImage = (e: ReactMouseEvent<HTMLDivElement>, img: DroppedImage) => {
+    // Prevent starting a move if the click is on the delete button
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    e.preventDefault();
+    setMovedImage({
+      id: img.id,
+      offsetX: e.clientX - img.x,
+      offsetY: e.clientY - img.y,
+    });
+  };
+
+  const handleMouseMove = (e: ReactMouseEvent<HTMLDivElement>) => {
+    if (!movedImage) return;
+    
+    e.preventDefault();
+
+    setDroppedImages(prev => prev.map(img => {
+      if (img.id === movedImage.id) {
+        const layerEl = e.currentTarget.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLDivElement;
+        if (!layerEl) return img;
+
+        const layerRect = layerEl.getBoundingClientRect();
+        
+        let newX = e.clientX - movedImage.offsetX;
+        let newY = e.clientY - movedImage.offsetY;
+
+        // Constrain movement within the layer bounds
+        const halfWidth = img.width / 2;
+        const halfHeight = img.height / 2;
+
+        newX = Math.max(halfWidth, Math.min(newX, layerRect.width - halfWidth));
+        newY = Math.max(halfHeight, Math.min(newY, layerRect.height - halfHeight));
+
+        return { ...img, x: newX, y: newY };
+      }
+      return img;
+    }));
+  };
+
+  const handleMouseUp = (e: ReactMouseEvent<HTMLDivElement>) => {
+    if (movedImage) {
+        e.preventDefault();
+        setMovedImage(null);
+    }
   };
 
 
@@ -107,9 +163,9 @@ export default function ScenePage() {
         </Card>
       )}
 
-      <div className="flex-1 w-full h-full relative overflow-hidden">
+      <div className="flex-1 w-full h-full relative overflow-hidden" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
         <div className="absolute inset-0 flex w-[200%] animate-marquee">
-          <div className="w-1/2 h-full flex-shrink-0">
+          <div className="w-1/2 h-full flex-shrink-0 relative">
             <Image
               src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
               alt="Scene background"
@@ -119,7 +175,7 @@ export default function ScenePage() {
               priority
             />
           </div>
-          <div className="w-1/2 h-full flex-shrink-0">
+          <div className="w-1/2 h-full flex-shrink-0 relative">
             <Image
               src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
               alt="Scene background"
@@ -136,6 +192,7 @@ export default function ScenePage() {
           {layerConfigs.map(config => (
             <div
               key={config.name}
+              data-layer-name={config.name}
               className={cn(
                 "absolute left-0 w-full border-2 border-transparent transition-all duration-300",
                 config.hoverClass
@@ -150,21 +207,39 @@ export default function ScenePage() {
                 .map(img => (
                   <div 
                     key={img.id} 
-                    className="absolute group"
-                    style={{ left: img.x, top: img.y, transform: 'translate(-50%, -50%)' }}
+                    className={cn(
+                      "absolute group cursor-grab",
+                      movedImage?.id === img.id && "cursor-grabbing"
+                    )}
+                    style={{ 
+                      left: img.x, 
+                      top: img.y, 
+                      width: img.width, 
+                      height: img.height,
+                      transform: 'translate(-50%, -50%)' 
+                    }}
+                    onMouseDown={(e) => handleMouseDownOnImage(e, img)}
                   >
                     <Image
                       src={img.src}
                       alt="Dropped creation"
-                      width={100}
-                      height={75}
-                      className="object-contain"
+                      width={img.width}
+                      height={img.height}
+                      className={cn(
+                        "object-contain pointer-events-none",
+                         movedImage?.id === img.id && "opacity-75"
+                      )}
                     />
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
-                      onClick={() => handleDeleteImage(img.id)}
+                      className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity rounded-full z-10 cursor-pointer"
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteImage(img.id);
+                        }
+                      }
+                      onMouseDown={(e) => e.stopPropagation()}
                     >
                       <XCircle className="h-4 w-4" />
                     </Button>
@@ -185,3 +260,5 @@ export default function ScenePage() {
     </div>
   );
 }
+
+    
