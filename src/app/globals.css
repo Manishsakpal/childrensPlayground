@@ -78,16 +78,16 @@
 }
 
 @layer utilities {
-  @keyframes scroll-left {
+  @keyframes marquee {
     from {
       transform: translateX(0);
     }
     to {
-      transform: translateX(-100%);
+      transform: translateX(-50%);
     }
   }
 
-  .animate-scroll-left {
-    animation: scroll-left 40s linear infinite;
+  .animate-marquee {
+    animation: marquee 40s linear infinite;
   }
 }
