@@ -216,7 +216,7 @@ export default function ScenePage() {
   }
 
   return (
-    <div className="bg-background overflow-hidden h-full w-full relative">
+    <div className="bg-background overflow-hidden relative h-[calc(100vh-4rem)]">
       <div 
         className={cn(
           "absolute top-0 left-0 h-full w-80 bg-background/80 backdrop-blur-sm z-30 transition-transform duration-300 ease-in-out",
