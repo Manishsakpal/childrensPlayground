@@ -138,7 +138,7 @@ export function Toolbox({
                 </TooltipTrigger>
                 <TooltipContent>Clear the entire canvas</TooltipContent>
             </Tooltip>
-             <Tooltip>
+            <Tooltip>
                 <TooltipTrigger asChild>
                     <Button onClick={save} className="col-span-2 bg-primary hover:bg-primary/90 text-primary-foreground"><Save className="mr-2 h-4 w-4"/> Save</Button>
                 </TooltipTrigger>
