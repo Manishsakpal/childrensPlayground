@@ -63,7 +63,6 @@ export default function DrawPage() {
     context.fillStyle = "white";
     context.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Only set initial history if it's empty
     if (history.length === 0) {
         const initialImageData = context.getImageData(0, 0, canvas.width, canvas.height);
         setHistory([initialImageData]);
@@ -204,7 +203,7 @@ export default function DrawPage() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dataUrl = canvas.toDataURL("image/png");
-    setSavedCreations([dataUrl, ...savedCreations]);
+    setSavedCreations(prevCreations => [dataUrl, ...prevCreations]);
   };
   
   const loadCreation = (dataUrl: string) => {
@@ -277,7 +276,7 @@ export default function DrawPage() {
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {savedCreations.map((src, index) => (
-                  <div key={index} className="relative group">
+                  <div key={src} className="relative group">
                     <button
                       onClick={() => loadCreation(src)}
                       className="block w-full h-full rounded-md overflow-hidden border-2 border-transparent hover:border-primary focus:border-primary focus:outline-none"

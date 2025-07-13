@@ -9,8 +9,9 @@ import { cn } from "@/lib/utils";
 export function Header() {
   const pathname = usePathname();
 
-  const navItems: { href: string, label: string }[] = [
-    // { href: "/", label: "Draw" }, // Link removed as requested
+  const navItems: { href: string; label: string }[] = [
+    { href: "/", label: "Draw" },
+    { href: "/scene", label: "Scene" },
   ];
 
   return (
