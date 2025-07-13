@@ -23,6 +23,11 @@ export default function DrawPage() {
   const [history, setHistory] = useState<ImageData[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [savedCreations, setSavedCreations] = useLocalStorage<string[]>("saved-creations", []);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const saveToHistory = useCallback(() => {
     const canvas = canvasRef.current;
@@ -238,6 +243,10 @@ export default function DrawPage() {
       setHistoryIndex(historyIndex + 1);
     }
   };
+
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto p-4 flex flex-col lg:flex-row gap-8 items-start justify-center">
