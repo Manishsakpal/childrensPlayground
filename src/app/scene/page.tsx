@@ -212,7 +212,6 @@ export default function ScenePage() {
 
   return (
     <div className="bg-background overflow-hidden relative h-full">
-        
       <div 
         className={cn(
           "absolute top-0 left-0 h-full w-80 bg-background/80 backdrop-blur-sm z-30 transition-transform duration-300 ease-in-out",
@@ -254,6 +253,7 @@ export default function ScenePage() {
               fill
               className="object-cover w-full h-full"
               priority
+              data-ai-hint="fantasy landscape"
             />
           </div>
           <div className="w-1/2 h-full flex-shrink-0 relative">
@@ -264,6 +264,7 @@ export default function ScenePage() {
               className="object-cover w-full h-full"
               priority
               aria-hidden="true"
+              data-ai-hint="fantasy landscape"
             />
           </div>
       </div>

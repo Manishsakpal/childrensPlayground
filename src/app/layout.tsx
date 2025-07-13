@@ -27,7 +27,7 @@ export default function RootLayout({
         <SceneProvider>
           <div className="flex flex-col h-screen">
             <Header />
-            <main className="flex-grow overflow-auto">{children}</main>
+            <main className="flex-1 overflow-auto">{children}</main>
             <Toaster />
           </div>
         </SceneProvider>
