@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -5,9 +6,13 @@ import { usePathname } from "next/navigation";
 import { Paintbrush } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useSceneContext } from "@/contexts/SceneContext";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 export function Header() {
   const pathname = usePathname();
+  const { movementMultiplier, setMovementMultiplier } = useSceneContext();
 
   const navItems: { href: string; label: string }[] = [
     { href: "/", label: "Draw" },
@@ -38,6 +43,22 @@ export function Header() {
             </Button>
           ))}
         </nav>
+        <div className="ml-auto flex items-center gap-2">
+            {pathname === '/scene' && (
+                 <div className="flex items-center gap-2">
+                    <Label htmlFor="multiplier" className="text-sm whitespace-nowrap text-muted-foreground">Speed:</Label>
+                    <Input 
+                        id="multiplier"
+                        type="number"
+                        value={movementMultiplier}
+                        onChange={(e) => setMovementMultiplier(Number(e.target.value))}
+                        className="w-20 h-8"
+                        min="0.1"
+                        step="0.1"
+                    />
+                </div>
+            )}
+        </div>
       </div>
     </header>
   );

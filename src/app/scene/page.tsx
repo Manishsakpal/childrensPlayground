@@ -9,8 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Plus, XCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useSceneContext } from "@/contexts/SceneContext";
 
 type LayerName = 'sky' | 'trees' | 'land' | 'water';
 
@@ -37,7 +36,7 @@ export default function ScenePage() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [draggedItem, setDraggedItem] = useState<{ src: string } | null>(null);
   const [movedImage, setMovedImage] = useState<MovedImageState | null>(null);
-  const [movementMultiplier, setMovementMultiplier] = useState(1);
+  const { movementMultiplier } = useSceneContext();
 
   useEffect(() => {
     setIsMounted(true);
@@ -86,14 +85,12 @@ export default function ScenePage() {
     e.preventDefault();
     e.stopPropagation();
     
-    // Find the layer element to get its client bounding rect
     const parentLayer = document.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLElement;
     if (!parentLayer) return;
     const layerRect = parentLayer.getBoundingClientRect();
 
     setMovedImage({
       id: img.id,
-      // Calculate offset from the image's top-left corner relative to the layer
       offsetX: e.clientX - layerRect.left - img.x,
       offsetY: e.clientY - layerRect.top - img.y,
     });
@@ -115,7 +112,6 @@ export default function ScenePage() {
         let newX = e.clientX - layerRect.left - movedImage.offsetX;
         let newY = e.clientY - layerRect.top - movedImage.offsetY;
 
-        // Constrain movement within the layer bounds
         newX = Math.max(0, Math.min(newX, layerRect.width - img.width));
         newY = Math.max(0, Math.min(newY, layerRect.height - img.height));
 
@@ -144,7 +140,7 @@ export default function ScenePage() {
   useEffect(() => {
     if (!isMounted || movedImage) return;
 
-    const effectiveMultiplier = Math.max(0.1, movementMultiplier); // Prevent division by zero or negative intervals
+    const effectiveMultiplier = Math.max(0.1, movementMultiplier);
     const intervalDuration = 1000 / effectiveMultiplier;
 
     const intervalId = setInterval(() => {
@@ -156,8 +152,8 @@ export default function ScenePage() {
           if (!parentLayer) return img;
           
           const layerRect = parentLayer.getBoundingClientRect();
-          const moveX = (Math.random() - 0.5) * 200; // -100 to 100
-          const moveY = (Math.random() - 0.5) * 200; // -100 to 100
+          const moveX = (Math.random() - 0.5) * 200;
+          const moveY = (Math.random() - 0.5) * 200;
 
           let newX = img.x + moveX;
           let newY = img.y + moveY;
@@ -190,21 +186,9 @@ export default function ScenePage() {
           <CardHeader>
             <CardTitle>Your Creations</CardTitle>
             <CardDescription>Drag a drawing onto a layer.</CardDescription>
-             <div className="flex items-center gap-2 pt-2">
-                <Label htmlFor="multiplier" className="text-sm whitespace-nowrap">Speed Multiplier:</Label>
-                <Input 
-                    id="multiplier"
-                    type="number"
-                    value={movementMultiplier}
-                    onChange={(e) => setMovementMultiplier(Number(e.target.value))}
-                    className="w-20 h-8"
-                    min="0.1"
-                    step="0.1"
-                />
-            </div>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[calc(100vh-16rem)]">
+            <ScrollArea className="h-[calc(100vh-12rem)]">
               <div className="grid grid-cols-2 gap-4 pr-4">
                 {savedCreations.map((src, index) => (
                   <div key={`${src.slice(0, 20)}-${index}`} className="group cursor-grab">
