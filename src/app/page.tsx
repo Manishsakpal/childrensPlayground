@@ -31,6 +31,25 @@ export default function DrawPage() {
     return canvas.getContext("2d");
   }, []);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const parent = canvas.parentElement;
+    if (parent) {
+      canvas.width = parent.clientWidth;
+      canvas.height = parent.clientHeight;
+    }
+    const ctx = getCanvasContext();
+    if (ctx) {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const initialImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      setHistory([initialImageData]);
+      setHistoryIndex(0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getCanvasContext]);
+
   const saveToHistory = useCallback(() => {
     const ctx = getCanvasContext();
     if (!ctx || !ctx.canvas) return;
@@ -41,22 +60,6 @@ export default function DrawPage() {
         return newHistory;
     });
   }, [getCanvasContext, historyIndex]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const parent = canvas.parentElement;
-    if(parent) {
-      canvas.width = parent.clientWidth;
-      canvas.height = parent.clientHeight;
-    }
-    const ctx = getCanvasContext();
-    if (ctx) {
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      saveToHistory();
-    }
-  }, [getCanvasContext, saveToHistory]);
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
