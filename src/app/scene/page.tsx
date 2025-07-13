@@ -33,23 +33,27 @@ export default function ScenePage() {
     <div className="flex h-[calc(100vh-4rem)] bg-background">
       <div className="w-full h-full relative overflow-hidden">
         <div className="absolute inset-0 flex w-[200%] animate-marquee">
-          <Image
-            src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-            alt="Scene background"
-            width={3840}
-            height={1080}
-            className="flex-shrink-0 w-1/2 h-full object-contain"
-            priority
-          />
-          <Image
-            src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-            alt="Scene background"
-            width={3840}
-            height={1080}
-            className="flex-shrink-0 w-1/2 h-full object-contain"
-            priority
-            aria-hidden="true"
-          />
+          <div className="w-1/2 h-full flex-shrink-0">
+            <Image
+              src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+              alt="Scene background"
+              width={3840}
+              height={1080}
+              className="w-full h-full object-cover"
+              priority
+            />
+          </div>
+          <div className="w-1/2 h-full flex-shrink-0">
+            <Image
+              src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+              alt="Scene background"
+              width={3840}
+              height={1080}
+              className="w-full h-full object-cover"
+              priority
+              aria-hidden="true"
+            />
+          </div>
         </div>
 
         <div className="absolute inset-0">
