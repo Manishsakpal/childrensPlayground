@@ -47,15 +47,16 @@ export default function DrawPage() {
       setHistory([initialImageData]);
       setHistoryIndex(0);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getCanvasContext]);
 
   const saveToHistory = useCallback(() => {
     const ctx = getCanvasContext();
     if (!ctx || !ctx.canvas) return;
+    const currentImageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+    
     setHistory(prevHistory => {
         const newHistory = prevHistory.slice(0, historyIndex + 1);
-        newHistory.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
+        newHistory.push(currentImageData);
         setHistoryIndex(newHistory.length - 1);
         return newHistory;
     });
