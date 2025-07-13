@@ -4,8 +4,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { GripVertical, Layers, Plus, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import {
@@ -239,18 +238,6 @@ export default function ScenePage() {
     }
   };
   
-  const deleteLayer = (id: number) => {
-    setLayers(prev => prev.filter(l => l.id !== id));
-    if (activeLayerId === id) {
-        const remainingLayers = layers.filter(l => l.id !== id);
-        setActiveLayerId(remainingLayers.length > 0 ? remainingLayers[remainingLayers.length - 1].id : null);
-    }
-  }
-
-  const toggleLayerVisibility = (id: number) => {
-    setLayers(prev => prev.map(l => l.id === id ? {...l, isVisible: !l.isVisible} : l));
-  }
-
   const activeLayer = getActiveLayer();
 
   return (
@@ -343,41 +330,6 @@ export default function ScenePage() {
           </div>
         </div>
         
-        <div className="absolute right-4 top-4 bottom-4 flex flex-col gap-4">
-            <Card className="w-64 bg-background/80 backdrop-blur-sm">
-                <CardContent className="p-2">
-                    <div className="flex items-center justify-between p-2">
-                        <div className="flex items-center gap-2">
-                            <Layers className="h-5 w-5" />
-                            <h3 className="font-semibold">Layers</h3>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={() => addLayer()}>
-                            <Plus className="h-5 w-5" />
-                        </Button>
-                    </div>
-                    <div className="flex flex-col gap-2 mt-2 max-h-[calc(100vh-300px)] overflow-y-auto">
-                        {layers.slice().reverse().map(layer => (
-                            <div 
-                                key={layer.id} 
-                                className={cn("flex items-center gap-2 p-2 rounded-md cursor-pointer", {
-                                    "bg-primary/20 ring-2 ring-primary": activeLayerId === layer.id
-                                })}
-                                onClick={() => setActiveLayerId(layer.id)}
-                            >
-                                <GripVertical className="h-5 w-5 text-muted-foreground" />
-                                <span className="flex-grow truncate">{layer.name}</span>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); toggleLayerVisibility(layer.id);}}>
-                                    {layer.isVisible ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5 text-muted-foreground" />}
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); deleteLayer(layer.id);}}>
-                                    <Trash2 className="h-5 w-5 text-destructive" />
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
       </div>
     </div>
   );
