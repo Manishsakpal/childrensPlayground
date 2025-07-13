@@ -173,8 +173,7 @@ export default function ScenePage() {
                 src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
                 alt="Scene background"
                 layout="fill"
-                objectCover="cover"
-                className="w-full h-full"
+                className="object-cover w-full h-full"
                 priority
               />
             </div>
@@ -183,8 +182,7 @@ export default function ScenePage() {
                 src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
                 alt="Scene background"
                 layout="fill"
-                objectCover="cover"
-                className="w-full h-full"
+                className="object-cover w-full h-full"
                 priority
                 aria-hidden="true"
               />
