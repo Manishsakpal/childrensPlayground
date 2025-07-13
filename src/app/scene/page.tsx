@@ -37,6 +37,7 @@ export default function ScenePage() {
   const [draggedItem, setDraggedItem] = useState<{ src: string } | null>(null);
   const [movedImage, setMovedImage] = useState<MovedImageState | null>(null);
   const { movementMultiplier, isMovementEnabled } = useSceneContext();
+  const [hoveredImageId, setHoveredImageId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -160,6 +161,10 @@ export default function ScenePage() {
         if (currentImages.length === 0) return [];
         
         return currentImages.map(img => {
+          if (img.id === hoveredImageId) {
+            return img; // Pause movement if hovered
+          }
+
           const parentLayer = document.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLElement;
           if (!parentLayer) return img;
           
@@ -179,7 +184,7 @@ export default function ScenePage() {
     }, intervalDuration);
 
     return () => clearInterval(intervalId);
-  }, [isMounted, movedImage, movementMultiplier, isMovementEnabled]);
+  }, [isMounted, movedImage, movementMultiplier, isMovementEnabled, hoveredImageId]);
 
 
   if (!isMounted) {
@@ -275,6 +280,8 @@ export default function ScenePage() {
                       transition: isMovementEnabled ? 'left 1s ease-in-out, top 1s ease-in-out' : 'none'
                     }}
                     onMouseDown={(e) => handleMouseDownOnImage(e, img)}
+                    onMouseEnter={() => setHoveredImageId(img.id)}
+                    onMouseLeave={() => setHoveredImageId(null)}
                   >
                     <Image
                       src={img.src}
