@@ -13,6 +13,8 @@ const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
 type Tool = "pen" | "fill" | "eraser";
+type Point = { x: number; y: number };
+type Stroke = { points: Point[]; tool: Tool; color: string; penSize: number };
 
 export default function DrawPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -20,121 +22,183 @@ export default function DrawPage() {
   const [tool, setTool] = useState<Tool>("pen");
   const [color, setColor] = useState("#000000");
   const [penSize, setPenSize] = useState(5);
-  const [history, setHistory] = useState<ImageData[]>([]);
+  const [history, setHistory] = useState<(ImageData | Stroke)[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [savedCreations, setSavedCreations] = useLocalStorage<string[]>("saved-creations", []);
   const [isMounted, setIsMounted] = useState(false);
+  const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const saveToHistory = useCallback(() => {
+  const getCanvasContext = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
+    if (!canvas) return null;
+    return canvas.getContext("2d", { willReadFrequently: true });
+  }, []);
 
+  const saveToHistory = useCallback((item: ImageData | Stroke) => {
     const newHistory = history.slice(0, historyIndex + 1);
-    const newImageData = context.getImageData(0, 0, canvas.width, canvas.height);
     
-    if (historyIndex > -1) {
-        const lastImageData = newHistory[historyIndex];
-        if (lastImageData && newImageData.data.toString() === lastImageData.data.toString()) {
+    // Check for duplicate ImageData to avoid saving same state
+    if (item instanceof ImageData && historyIndex > -1) {
+        const lastItem = newHistory[historyIndex];
+        if (lastItem instanceof ImageData && item.data.toString() === lastItem.data.toString()) {
             return;
         }
     }
-    
-    const updatedHistory = [...newHistory, newImageData];
+
+    const updatedHistory = [...newHistory, item];
     setHistory(updatedHistory);
     setHistoryIndex(updatedHistory.length - 1);
   }, [history, historyIndex]);
 
 
   const restoreFromHistory = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || history.length === 0 || historyIndex < 0) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    context.putImageData(history[historyIndex], 0, 0);
-  }, [history, historyIndex]);
+    const ctx = getCanvasContext();
+    if (!ctx || history.length === 0 || historyIndex < 0) return;
+
+    const lastValidImageDataIndex = history.slice(0, historyIndex + 1).findLastIndex(item => item instanceof ImageData);
+
+    if (lastValidImageDataIndex === -1) {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      return;
+    }
+
+    ctx.putImageData(history[lastValidImageDataIndex] as ImageData, 0, 0);
+
+    for (let i = lastValidImageDataIndex + 1; i <= historyIndex; i++) {
+        const item = history[i];
+        if (item instanceof ImageData) {
+             ctx.putImageData(item, 0, 0);
+        } else if ('points' in item) {
+            drawStroke(ctx, item as Stroke);
+        }
+    }
+  }, [getCanvasContext, history, historyIndex]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
+    const ctx = getCanvasContext();
+    if (!ctx) return;
     
-    context.fillStyle = "white";
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     
     if (history.length === 0) {
-        const initialImageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const initialImageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
         setHistory([initialImageData]);
         setHistoryIndex(0);
+    } else {
+        restoreFromHistory();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isMounted]); // Only on mount
 
   useEffect(() => {
     restoreFromHistory();
   }, [historyIndex, restoreFromHistory]);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
+    const ctx = getCanvasContext();
+    if (!ctx) return;
+
+    const point = { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY };
 
     if (tool === "pen" || tool === "eraser") {
       setIsDrawing(true);
-      context.beginPath();
-      context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-      context.lineWidth = penSize;
-      context.lineCap = "round";
-      context.lineJoin = "round";
+      setCurrentStroke([point]);
+
+      ctx.beginPath();
+      ctx.moveTo(point.x, point.y);
+      ctx.lineWidth = penSize;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
       
       if (tool === "pen") {
-        context.globalCompositeOperation = "source-over";
-        context.strokeStyle = color;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = color;
       } else { // Eraser
-        context.globalCompositeOperation = "destination-out";
+        ctx.globalCompositeOperation = "destination-out";
       }
     }
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing || (tool !== "pen" && tool !== "eraser")) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    context.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    context.stroke();
+    const ctx = getCanvasContext();
+    if (!ctx) return;
+
+    const point = { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY };
+    setCurrentStroke(prev => [...prev, point]);
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
   };
 
   const stopDrawing = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
+    const ctx = getCanvasContext();
+    if (!ctx) return;
+
     if (isDrawing) {
-       context.closePath();
+       ctx.closePath();
        setIsDrawing(false);
-       saveToHistory();
+       if (currentStroke.length > 0) {
+           const newStroke: Stroke = { points: currentStroke, tool, color, penSize };
+           saveToHistory(newStroke);
+       }
+       setCurrentStroke([]);
     }
-    context.globalCompositeOperation = "source-over";
+    ctx.globalCompositeOperation = "source-over";
   };
+  
+  const drawStroke = (ctx: CanvasRenderingContext2D, stroke: Stroke, smoothed = false) => {
+    ctx.beginPath();
+    ctx.lineWidth = stroke.penSize;
+    ctx.strokeStyle = stroke.color;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (stroke.tool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+    } else {
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
+    if (smoothed && stroke.points.length > 2) {
+        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+        for (let i = 1; i < stroke.points.length - 2; i++) {
+            const xc = (stroke.points[i].x + stroke.points[i + 1].x) / 2;
+            const yc = (stroke.points[i].y + stroke.points[i + 1].y) / 2;
+            ctx.quadraticCurveTo(stroke.points[i].x, stroke.points[i].y, xc, yc);
+        }
+        // curve to the last point
+        ctx.quadraticCurveTo(
+            stroke.points[stroke.points.length - 2].x,
+            stroke.points[stroke.points.length - 2].y,
+            stroke.points[stroke.points.length - 1].x,
+            stroke.points[stroke.points.length - 1].y
+        );
+    } else {
+        if(stroke.points.length > 0) {
+          ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+          for (let i = 1; i < stroke.points.length; i++) {
+              ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+          }
+        }
+    }
+
+    ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+};
 
   const floodFill = (x: number, y: number, fillColor: number[]) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const ctx = getCanvasContext();
     if (!ctx) return;
     
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const data = imageData.data;
-    const targetColor = getColorAtPixel(data, x, y, canvas.width);
+    const targetColor = getColorAtPixel(data, x, y, ctx.canvas.width);
 
     if (colorsMatch(targetColor, fillColor)) {
       return;
@@ -144,14 +208,14 @@ export default function DrawPage() {
 
     while (stack.length > 0) {
       const [px, py] = stack.pop()!;
-      if (px < 0 || px >= canvas.width || py < 0 || py >= canvas.height) {
+      if (px < 0 || px >= ctx.canvas.width || py < 0 || py >= ctx.canvas.height) {
         continue;
       }
 
-      const currentColor = getColorAtPixel(data, px, py, canvas.width);
+      const currentColor = getColorAtPixel(data, px, py, ctx.canvas.width);
 
       if (colorsMatch(currentColor, targetColor)) {
-        setColorAtPixel(data, px, py, canvas.width, fillColor);
+        setColorAtPixel(data, px, py, ctx.canvas.width, fillColor);
         stack.push([px + 1, py]);
         stack.push([px - 1, py]);
         stack.push([px, py + 1]);
@@ -159,7 +223,7 @@ export default function DrawPage() {
       }
     }
     ctx.putImageData(imageData, 0, 0);
-    saveToHistory();
+    saveToHistory(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
   };
 
   const getColorAtPixel = (data: Uint8ClampedArray, x: number, y: number, width: number) => {
@@ -195,13 +259,11 @@ export default function DrawPage() {
   }
 
   const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    context.fillStyle = "white";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    saveToHistory();
+    const ctx = getCanvasContext();
+    if (!ctx) return;
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    saveToHistory(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
   };
 
   const saveCreation = () => {
@@ -212,17 +274,15 @@ export default function DrawPage() {
   };
   
   const loadCreation = (dataUrl: string) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext('2d');
-    if (!context) return;
+    const ctx = getCanvasContext();
+    if (!ctx) return;
 
     const img = new window.Image();
     img.src = dataUrl;
     img.onload = () => {
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(img, 0, 0);
-      saveToHistory();
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.drawImage(img, 0, 0);
+      saveToHistory(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
     }
   };
 
@@ -242,6 +302,31 @@ export default function DrawPage() {
     if (historyIndex < history.length - 1) {
       setHistoryIndex(historyIndex + 1);
     }
+  };
+
+  const smoothLastStroke = () => {
+    const ctx = getCanvasContext();
+    if (!ctx) return;
+
+    const lastStrokeIndex = history.slice(0, historyIndex + 1).findLastIndex(item => 'points' in item);
+    if (lastStrokeIndex === -1) return;
+
+    const lastStroke = history[lastStrokeIndex] as Stroke;
+    if (lastStroke.points.length < 3) return; // Not enough points to smooth
+
+    // Temporarily go back in history to draw on canvas state before last stroke
+    const tempHistoryIndex = historyIndex;
+    setHistoryIndex(lastStrokeIndex - 1);
+
+    // This is a bit of a hack to wait for the restoreFromHistory to complete
+    setTimeout(() => {
+      drawStroke(ctx, lastStroke, true);
+      
+      const newImageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+      const newHistory = history.slice(0, lastStrokeIndex); // Remove old stroke
+      setHistory([...newHistory, newImageData]); // Add smoothed image data
+      setHistoryIndex(newHistory.length); // Point to the new smoothed state
+    }, 50);
   };
 
   if (!isMounted) {
@@ -275,8 +360,10 @@ export default function DrawPage() {
           redo={redo}
           clearCanvas={clearCanvas}
           saveCreation={saveCreation}
+          smoothLastStroke={smoothLastStroke}
           canUndo={historyIndex > 0}
           canRedo={historyIndex < history.length - 1}
+          canSmooth={history.length > 0 && historyIndex > -1 && 'points' in history[historyIndex]}
         />
         {isMounted && savedCreations.length > 0 && (
           <Card className="mt-4 w-full" style={{ maxWidth: CANVAS_WIDTH }}>

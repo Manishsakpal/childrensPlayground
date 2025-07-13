@@ -12,6 +12,7 @@ import {
   Plus,
   Eraser,
   Move,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,8 +38,10 @@ interface ToolboxProps {
   redo: () => void;
   clearCanvas: () => void;
   saveCreation?: () => void;
+  smoothLastStroke?: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  canSmooth?: boolean;
   isStudio?: boolean;
 }
 
@@ -53,8 +56,10 @@ export function Toolbox({
   redo,
   clearCanvas,
   saveCreation,
+  smoothLastStroke,
   canUndo,
   canRedo,
+  canSmooth,
   isStudio = false,
 }: ToolboxProps) {
   return (
@@ -175,6 +180,24 @@ export function Toolbox({
                     <p>Redo</p>
                 </TooltipContent>
                 </Tooltip>
+
+                {!isStudio && smoothLastStroke && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={smoothLastStroke}
+                        disabled={!canSmooth}
+                      >
+                        <Wand2 className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Smooth Last Stroke</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
             </div>
             
             <div className={cn("bg-border", isStudio ? "h-px w-full my-2" : "h-8 w-px mx-2")} />
