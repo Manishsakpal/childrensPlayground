@@ -26,9 +26,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <SceneProvider>
             <Header />
-            <div className="pt-16 h-screen">
-              <main className="h-full">{children}</main>
-            </div>
+            <main>{children}</main>
             <Toaster />
         </SceneProvider>
       </body>
