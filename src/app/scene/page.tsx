@@ -211,11 +211,11 @@ export default function ScenePage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-background flex flex-col overflow-hidden">
+    <div className="bg-background overflow-hidden relative h-full">
         
       <div 
         className={cn(
-          "absolute top-16 left-0 h-[calc(100vh-4rem)] w-80 bg-background/80 backdrop-blur-sm z-30 transition-transform duration-300 ease-in-out",
+          "absolute top-0 left-0 h-full w-80 bg-background/80 backdrop-blur-sm z-30 transition-transform duration-300 ease-in-out",
           isPanelOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -246,125 +246,123 @@ export default function ScenePage() {
         </Card>
       </div>
 
-      <div className="w-full flex-grow relative overflow-hidden">
-        <div className="absolute inset-0 flex w-[200%] animate-marquee">
-            <div className="w-1/2 h-full flex-shrink-0 relative">
-              <Image
-                src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-                alt="Scene background"
-                fill
-                className="object-cover w-full h-full"
-                priority
-              />
-            </div>
-            <div className="w-1/2 h-full flex-shrink-0 relative">
-              <Image
-                src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-                alt="Scene background"
-                fill
-                className="object-cover w-full h-full"
-                priority
-                aria-hidden="true"
-              />
-            </div>
-        </div>
+      <div className="absolute inset-0 flex w-[200%] animate-marquee">
+          <div className="w-1/2 h-full flex-shrink-0 relative">
+            <Image
+              src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+              alt="Scene background"
+              fill
+              className="object-cover w-full h-full"
+              priority
+            />
+          </div>
+          <div className="w-1/2 h-full flex-shrink-0 relative">
+            <Image
+              src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+              alt="Scene background"
+              fill
+              className="object-cover w-full h-full"
+              priority
+              aria-hidden="true"
+            />
+          </div>
+      </div>
 
-        <div className="absolute inset-0 z-10">
-          {layerConfigs.map(config => (
-            <div
-              key={config.name}
-              data-layer-name={config.name}
-              className="absolute left-0 w-full"
-              style={config.style}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, config.name)}
-            >
-              {droppedImages
-                .filter(img => img.layer === config.name)
-                .map(img => (
-                  <div 
-                    key={img.id} 
+      <div className="absolute inset-0 z-10">
+        {layerConfigs.map(config => (
+          <div
+            key={config.name}
+            data-layer-name={config.name}
+            className="absolute left-0 w-full"
+            style={config.style}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, config.name)}
+          >
+            {droppedImages
+              .filter(img => img.layer === config.name)
+              .map(img => (
+                <div 
+                  key={img.id} 
+                  className={cn(
+                    "absolute group",
+                    movedImage?.id === img.id ? "cursor-grabbing z-30" : "cursor-grab z-20"
+                  )}
+                  style={{ 
+                    left: img.x, 
+                    top: img.y, 
+                    width: img.width, 
+                    height: img.height,
+                    transition: isMovementEnabled && !movedImage && !img.isPaused ? `left ${1/movementMultiplier}s ease-in-out, top ${1/movementMultiplier}s ease-in-out` : 'none'
+                  }}
+                  onMouseDown={(e) => handleMouseDownOnImage(e, img)}
+                  onMouseEnter={() => setHoveredImageId(img.id)}
+                  onMouseLeave={() => setHoveredImageId(null)}
+                >
+                  <Image
+                    src={img.src}
+                    alt="Dropped creation"
+                    width={img.width}
+                    height={img.height}
                     className={cn(
-                      "absolute group",
-                      movedImage?.id === img.id ? "cursor-grabbing z-30" : "cursor-grab z-20"
+                      "object-contain pointer-events-none w-full h-full",
+                        movedImage?.id === img.id && "opacity-75"
                     )}
-                    style={{ 
-                      left: img.x, 
-                      top: img.y, 
-                      width: img.width, 
-                      height: img.height,
-                      transition: isMovementEnabled && !movedImage && !img.isPaused ? `left ${1/movementMultiplier}s ease-in-out, top ${1/movementMultiplier}s ease-in-out` : 'none'
-                    }}
-                    onMouseDown={(e) => handleMouseDownOnImage(e, img)}
-                    onMouseEnter={() => setHoveredImageId(img.id)}
-                    onMouseLeave={() => setHoveredImageId(null)}
-                  >
-                    <Image
-                      src={img.src}
-                      alt="Dropped creation"
-                      width={img.width}
-                      height={img.height}
-                      className={cn(
-                        "object-contain pointer-events-none w-full h-full",
-                         movedImage?.id === img.id && "opacity-75"
-                      )}
-                    />
-                     <div className="absolute -top-2 -right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-40">
-                       <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-6 w-6 rounded-full bg-background hover:bg-muted"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTogglePause(img.id);
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
-                       >
-                         {img.isPaused ? <Play className="h-4 w-4"/> : <Pause className="h-4 w-4"/>}
-                       </Button>
-                       <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-6 w-6 rounded-full bg-background hover:bg-muted"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleChangeSize(img.id, -1);
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
+                  />
+                    <div className="absolute -top-2 -right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-40">
+                      <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-6 w-6 rounded-full bg-background hover:bg-muted"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTogglePause(img.id);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
                       >
-                        <MinusCircle className="h-4 w-4" />
-                      </Button>
-                       <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-6 w-6 rounded-full bg-background hover:bg-muted"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleChangeSize(img.id, 1);
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
-                      >
-                        <PlusCircle className="h-4 w-4" />
+                        {img.isPaused ? <Play className="h-4 w-4"/> : <Pause className="h-4 w-4"/>}
                       </Button>
                       <Button
-                        variant="destructive"
-                        size="icon"
-                        className="h-6 w-6 rounded-full"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteImage(img.id);
-                          }
+                      variant="outline"
+                      size="icon"
+                      className="h-6 w-6 rounded-full bg-background hover:bg-muted"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleChangeSize(img.id, -1);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <MinusCircle className="h-4 w-4" />
+                    </Button>
+                      <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-6 w-6 rounded-full bg-background hover:bg-muted"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleChangeSize(img.id, 1);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="h-6 w-6 rounded-full"
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteImage(img.id);
                         }
-                        onMouseDown={(e) => e.stopPropagation()}
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
+                      }
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
                   </div>
-                ))}
-            </div>
-          ))}
-        </div>
+                </div>
+              ))}
+          </div>
+        ))}
       </div>
       
       <Button 

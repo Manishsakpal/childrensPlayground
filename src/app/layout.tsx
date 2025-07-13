@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -24,9 +25,11 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased">
         <SceneProvider>
-          <Header />
-          <main className="flex-grow">{children}</main>
-          <Toaster />
+          <div className="flex flex-col h-screen">
+            <Header />
+            <main className="flex-grow overflow-auto">{children}</main>
+            <Toaster />
+          </div>
         </SceneProvider>
       </body>
     </html>
