@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -14,6 +14,7 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
@@ -33,7 +34,7 @@ interface Layers {
   water: DroppedImage[];
 }
 
-export default function ScenePage() {
+function ScenePageContent() {
   const [isMounted, setIsMounted] = useState(false);
   const [savedCreations] = useLocalStorage<string[]>("saved-creations", []);
   const [layers, setLayers] = useLocalStorage<Layers>("scene-layers", {
@@ -42,6 +43,8 @@ export default function ScenePage() {
     land: [],
     water: [],
   });
+  
+  const { setOpen: setSidebarOpen } = useSidebar();
 
   useEffect(() => {
     setIsMounted(true);
@@ -75,12 +78,22 @@ export default function ScenePage() {
       ...prevLayers,
       [layer]: [...prevLayers[layer], newImage],
     }));
+    
+    // Auto-close sidebar after drop
+    setSidebarOpen(false);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
   
+  const deleteDroppedImage = (layerName: LayerName, imageId: string) => {
+    setLayers(prevLayers => ({
+      ...prevLayers,
+      [layerName]: prevLayers[layerName].filter(image => image.id !== imageId),
+    }));
+  };
+
   const layerConfigs: { name: LayerName; style: React.CSSProperties; title: string; hoverClass: string }[] = [
     { name: 'sky', style: { top: '0%', height: '25%' }, title: 'Sky Layer (25%)', hoverClass: 'hover:border-blue-300 hover:bg-blue-300/10' },
     { name: 'trees', style: { top: '25%', height: '30%' }, title: 'Trees Layer (30%)', hoverClass: 'hover:border-green-400 hover:bg-green-400/10' },
@@ -97,7 +110,7 @@ export default function ScenePage() {
   }
 
   return (
-    <SidebarProvider>
+    <>
       <Sidebar side="left" collapsible="icon" className="w-80">
         <SidebarContent className="p-0">
           <Card className="h-full w-full rounded-none border-0">
@@ -155,15 +168,27 @@ export default function ScenePage() {
                 title={config.title}
               >
                 {layers[config.name].map(image => (
-                  <Image
+                  <div 
                     key={image.id}
-                    src={image.src}
-                    alt="Dropped drawing"
-                    width={150} 
-                    height={112}
-                    className="absolute"
-                    style={{ left: `${image.x}px`, top: `${image.y}px`, pointerEvents: 'none' }}
-                  />
+                    className="absolute group"
+                    style={{ left: `${image.x}px`, top: `${image.y}px`, width: 150, height: 112 }}
+                  >
+                    <Image
+                      src={image.src}
+                      alt="Dropped drawing"
+                      width={150} 
+                      height={112}
+                      className="pointer-events-none"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
+                      onClick={() => deleteDroppedImage(config.name, image.id)}
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ))}
               </div>
             ))}
@@ -175,6 +200,15 @@ export default function ScenePage() {
           </SidebarTrigger>
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   );
+}
+
+
+export default function ScenePage() {
+    return (
+        <SidebarProvider>
+            <ScenePageContent />
+        </SidebarProvider>
+    )
 }
