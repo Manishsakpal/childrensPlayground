@@ -120,29 +120,29 @@ export function Toolbox({
         <div className="space-y-2">
           <Label>Actions</Label>
           <div className="grid grid-cols-2 gap-2">
-             <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="outline" onClick={undo} disabled={!canUndo}><Undo className="mr-2 h-4 w-4" /> Undo</Button>
-                </TooltipTrigger>
-                <TooltipContent>Undo last action</TooltipContent>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={undo} disabled={!canUndo}><Undo className="mr-2 h-4 w-4" /> Undo</Button>
+              </TooltipTrigger>
+              <TooltipContent>Undo last action</TooltipContent>
             </Tooltip>
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="outline" onClick={redo} disabled={!canRedo}><Redo className="mr-2 h-4 w-4" /> Redo</Button>
-                </TooltipTrigger>
-                <TooltipContent>Redo last action</TooltipContent>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={redo} disabled={!canRedo}><Redo className="mr-2 h-4 w-4" /> Redo</Button>
+              </TooltipTrigger>
+              <TooltipContent>Redo last action</TooltipContent>
             </Tooltip>
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="destructive" onClick={clear} className="col-span-2"><Trash2 className="mr-2 h-4 w-4"/> Clear</Button>
-                </TooltipTrigger>
-                <TooltipContent>Clear the entire canvas</TooltipContent>
+              <TooltipTrigger asChild>
+                <Button variant="destructive" onClick={clear} className="col-span-2"><Trash2 className="mr-2 h-4 w-4"/> Clear</Button>
+              </TooltipTrigger>
+              <TooltipContent>Clear the entire canvas</TooltipContent>
             </Tooltip>
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button onClick={save} className="col-span-2 bg-primary hover:bg-primary/90 text-primary-foreground"><Save className="mr-2 h-4 w-4"/> Save</Button>
-                </TooltipTrigger>
-                <TooltipContent>Save drawing to gallery</TooltipContent>
+              <TooltipTrigger asChild>
+                <Button onClick={save} className="col-span-2 bg-primary hover:bg-primary/90 text-primary-foreground"><Save className="mr-2 h-4 w-4"/> Save</Button>
+              </TooltipTrigger>
+              <TooltipContent>Save drawing to gallery</TooltipContent>
             </Tooltip>
           </div>
         </div>
