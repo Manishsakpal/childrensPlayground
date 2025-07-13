@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Toolbox } from "@/components/toolbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { GripVertical, Layers, Plus, Trash2, Eye, EyeOff, Move } from "lucide-react";
+import { GripVertical, Layers, Plus, Trash2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import {
@@ -72,11 +72,9 @@ export default function StudioPage() {
         if (ctx) {
             let initialImageData;
             if (img) {
-              // Draw the image, then save history
               ctx.drawImage(img, 0, 0);
               initialImageData = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
             } else {
-              // For a blank layer, save the empty state
               initialImageData = ctx.createImageData(CANVAS_WIDTH, CANVAS_HEIGHT);
             }
 
@@ -85,6 +83,10 @@ export default function StudioPage() {
 
             setLayers(prev => [...prev, newLayer]);
             setActiveLayerId(newId);
+
+            if (imageDataUrl) {
+                setTool("move");
+            }
         }
       }
     };
@@ -97,7 +99,6 @@ export default function StudioPage() {
         };
         img.src = imageDataUrl;
     } else {
-        // We need to wait for the canvas ref to be available
         setTimeout(() => initializeLayer(), 0);
     }
   }, [layers]);
@@ -156,7 +157,7 @@ export default function StudioPage() {
 
   const startInteraction = (e: React.MouseEvent<HTMLDivElement>) => {
     const activeLayer = getActiveLayer();
-    if (!activeLayer || !activeLayer.canvasRef.current || !activeLayer.isVisible) return;
+    if (!activeLayer || !activeLayer.isVisible) return;
     const viewport = viewportRef.current;
     if (!viewport) return;
     
@@ -173,6 +174,7 @@ export default function StudioPage() {
       return;
     }
     
+    if (!activeLayer.canvasRef.current) return;
     const context = activeLayer.canvasRef.current.getContext("2d");
     if (!context) return;
 
@@ -198,7 +200,7 @@ export default function StudioPage() {
 
   const onInteract = (e: React.MouseEvent<HTMLDivElement>) => {
     const activeLayer = getActiveLayer();
-    if (!activeLayer || !activeLayer.canvasRef.current || !activeLayer.isVisible) return;
+    if (!activeLayer || !activeLayer.isVisible) return;
     const viewport = viewportRef.current;
     if (!viewport) return;
 
@@ -216,6 +218,7 @@ export default function StudioPage() {
     }
     
     if (isDrawing && (tool === "pen" || tool === "eraser")) {
+      if (!activeLayer.canvasRef.current) return;
       const context = activeLayer.canvasRef.current.getContext("2d");
       if (!context) return;
       const layerX = (x - activeLayer.transform.x) / activeLayer.transform.scale;
@@ -295,7 +298,7 @@ export default function StudioPage() {
         <Sidebar side="left" variant="floating" collapsible="icon">
           <SidebarContent className="p-0">
              <SidebarHeader>
-              <h3 className="font-semibold text-center">Creations</h3>
+              <h3 className="font-semibold text-center p-2">Add Drawing</h3>
             </SidebarHeader>
             <SidebarGroup>
                 <SidebarGroupContent>
@@ -324,7 +327,9 @@ export default function StudioPage() {
 
         <div className="flex-grow flex items-center justify-center overflow-hidden relative">
           <div className="absolute left-4 top-4 z-20">
-             <SidebarTrigger />
+             <SidebarTrigger>
+                <Plus className="h-5 w-5" />
+             </SidebarTrigger>
           </div>
           <div 
             ref={viewportRef}
@@ -332,7 +337,7 @@ export default function StudioPage() {
             style={{ 
               width: `min(calc(100vw - 320px), calc((100vh - 64px) * ${CANVAS_WIDTH} / ${CANVAS_HEIGHT}))`,
               height: `min(calc(100vh - 64px), calc((100vw - 320px) * ${CANVAS_HEIGHT} / ${CANVAS_WIDTH}))`,
-              cursor: tool === 'move' ? 'grab' : 'crosshair'
+              cursor: tool === 'move' ? (isDragging ? 'grabbing' : 'grab') : 'crosshair'
             }}
             onMouseDown={startInteraction}
             onMouseMove={onInteract}
@@ -341,8 +346,7 @@ export default function StudioPage() {
           >
             <div className="absolute inset-0 w-full h-full overflow-hidden">
               <div 
-                className="w-[200%] h-full flex"
-                style={{ animation: "scroll-left 40s linear infinite" }}
+                className="w-[200%] h-full flex animate-scroll-left"
               >
                 <div className="relative w-1/2 h-full">
                   <Image
@@ -437,3 +441,5 @@ export default function StudioPage() {
     </SidebarProvider>
   );
 }
+
+    
