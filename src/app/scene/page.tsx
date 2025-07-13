@@ -1,65 +1,163 @@
 
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type LayerName = 'sky' | 'trees' | 'land' | 'water';
+
+interface DroppedImage {
+  id: string;
+  src: string;
+  x: number;
+  y: number;
+}
+
+interface Layers {
+  sky: DroppedImage[];
+  trees: DroppedImage[];
+  land: DroppedImage[];
+  water: DroppedImage[];
+}
 
 export default function ScenePage() {
-  return (
-    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-800">
-      <div className="flex-grow flex relative">
-        <div className="relative w-full h-full bg-gray-700">
-            <div className="absolute inset-0 w-full h-full overflow-hidden">
-                <div className="w-full h-full animate-scroll-left flex">
-                    <div className="relative w-full h-full flex-shrink-0">
-                        <Image
-                        src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-                        alt="Scrolling scene background"
-                        layout="fill"
-                        objectFit="cover"
-                        priority
-                        />
-                    </div>
-                    <div className="relative w-full h-full flex-shrink-0">
-                        <Image
-                        src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-                        alt="Scrolling scene background"
-                        layout="fill"
-                        objectFit="cover"
-                        aria-hidden="true"
-                        />
-                    </div>
-                </div>
-            </div>
-            
-            {/* Transparent Layers */}
-            <div className="absolute inset-0 pointer-events-none">
-                {/* Sky Layer */}
-                <div 
-                    className="absolute top-0 left-0 w-full h-[25%] border-2 border-transparent hover:border-blue-300 hover:bg-blue-300/10 transition-all duration-300"
-                    title="Sky Layer (25%)"
-                ></div>
+  const [isMounted, setIsMounted] = useState(false);
+  const [savedCreations] = useLocalStorage<string[]>("saved-creations", []);
+  const [layers, setLayers] = useState<Layers>({
+    sky: [],
+    trees: [],
+    land: [],
+    water: [],
+  });
 
-                {/* Trees Layer */}
-                <div 
-                    className="absolute top-[25%] left-0 w-full h-[30%] border-2 border-transparent hover:border-green-400 hover:bg-green-400/10 transition-all duration-300"
-                    title="Trees Layer (30%)"
-                ></div>
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-                {/* Green Land Layer */}
-                <div 
-                    className="absolute top-[55%] left-0 w-full h-[27%] border-2 border-transparent hover:border-yellow-400 hover:bg-yellow-400/10 transition-all duration-300"
-                    title="Green Land Layer (27%)"
-                ></div>
+  const handleDragStart = (e: React.DragEvent<HTMLImageElement>, src: string) => {
+    e.dataTransfer.setData("imageSrc", src);
+  };
 
-                {/* Water Layer */}
-                <div 
-                    className="absolute bottom-0 left-0 w-full h-[18%] border-2 border-transparent hover:border-cyan-400 hover:bg-cyan-400/10 transition-all duration-300"
-                    title="Water Layer (18%)"
-                ></div>
-            </div>
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, layer: LayerName) => {
+    e.preventDefault();
+    const src = e.dataTransfer.getData("imageSrc");
+    if (!src) return;
+
+    const targetRect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - targetRect.left;
+    const y = e.clientY - targetRect.top;
+
+    const newImage: DroppedImage = {
+      id: `${layer}-${Date.now()}`,
+      src,
+      x,
+      y,
+    };
+
+    setLayers(prevLayers => ({
+      ...prevLayers,
+      [layer]: [...prevLayers[layer], newImage],
+    }));
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+  
+  const layerConfigs: { name: LayerName; style: React.CSSProperties; title: string; hoverClass: string }[] = [
+    { name: 'sky', style: { top: '0%', height: '25%' }, title: 'Sky Layer (25%)', hoverClass: 'hover:border-blue-300 hover:bg-blue-300/10' },
+    { name: 'trees', style: { top: '25%', height: '30%' }, title: 'Trees Layer (30%)', hoverClass: 'hover:border-green-400 hover:bg-green-400/10' },
+    { name: 'land', style: { top: '55%', height: '27%' }, title: 'Green Land Layer (27%)', hoverClass: 'hover:border-yellow-400 hover:bg-yellow-400/10' },
+    { name: 'water', style: { top: '82%', height: '18%' }, title: 'Water Layer (18%)', hoverClass: 'hover:border-cyan-400 hover:bg-cyan-400/10' },
+  ];
+
+  if (!isMounted) {
+    return (
+        <div className="flex items-center justify-center h-screen">
+            <div className="text-2xl text-muted-foreground">Loading Scene...</div>
         </div>
+    );
+  }
+
+  return (
+    <div className="relative w-screen h-[calc(100vh-64px)] overflow-hidden">
+      <div className="absolute inset-0 w-full h-full">
+        <Image
+          src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+          alt="Scene background"
+          layout="fill"
+          objectFit="cover"
+          priority
+        />
       </div>
+
+      {/* Layers Container */}
+      <div className="absolute inset-0">
+        {layerConfigs.map(config => (
+          <div
+            key={config.name}
+            onDrop={(e) => handleDrop(e, config.name)}
+            onDragOver={handleDragOver}
+            className={cn(
+              "absolute left-0 w-full border-2 border-transparent transition-all duration-300",
+              config.hoverClass
+            )}
+            style={config.style}
+            title={config.title}
+          >
+            {layers[config.name].map(image => (
+              <Image
+                key={image.id}
+                src={image.src}
+                alt="Dropped drawing"
+                width={150} 
+                height={112}
+                className="absolute"
+                style={{ left: `${image.x - 75}px`, top: `${image.y - 56}px`, pointerEvents: 'none' }}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+      
+      {/* Floating Add Button */}
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button className="absolute bottom-6 right-6 z-10 rounded-full h-14 w-14 shadow-lg">
+            <Plus className="h-6 w-6" />
+            <span className="sr-only">Add Drawing</span>
+          </Button>
+        </SheetTrigger>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Your Creations</SheetTitle>
+          </SheetHeader>
+          <div className="py-4 grid grid-cols-2 gap-4">
+            {savedCreations.length > 0 ? (
+              savedCreations.map((src, index) => (
+                <div key={`${src.slice(-10)}-${index}`} className="cursor-grab active:cursor-grabbing">
+                  <Image
+                    src={src}
+                    alt={`Saved creation ${index + 1}`}
+                    width={150}
+                    height={112}
+                    className="object-cover w-full h-full rounded-md border"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, src)}
+                  />
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground col-span-2">No saved drawings found. Go to the "Draw" page to create some!</p>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
