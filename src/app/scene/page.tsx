@@ -3,7 +3,6 @@
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Toolbox } from "@/components/toolbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GripVertical, Layers, Plus, Trash2, Eye, EyeOff } from "lucide-react";
@@ -37,9 +36,6 @@ type Layer = {
 
 export default function ScenePage() {
   const [tool, setTool] = useState<Tool>("pen");
-  const [color, setColor] = useState("#000000");
-  const [penSize, setPenSize] = useState(5);
-
   const [layers, setLayers] = useState<Layer[]>([]);
   const [activeLayerId, setActiveLayerId] = useState<number | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -183,13 +179,13 @@ export default function ScenePage() {
       setIsDrawing(true);
       context.beginPath();
       context.moveTo(layerX, layerY);
-      context.lineWidth = penSize / activeLayer.transform.scale;
+      context.lineWidth = 5 / activeLayer.transform.scale;
       context.lineCap = "round";
       context.lineJoin = "round";
       
       if (tool === "pen") {
         context.globalCompositeOperation = "source-over";
-        context.strokeStyle = color;
+        context.strokeStyle = "#000000";
       } else { // Eraser
         context.globalCompositeOperation = "destination-out";
       }
@@ -240,37 +236,6 @@ export default function ScenePage() {
       setIsDrawing(false);
       saveToHistory();
       context.globalCompositeOperation = "source-over";
-    }
-  };
-  
-  const clearCanvas = () => {
-    const activeLayer = getActiveLayer();
-    if (!activeLayer || !activeLayer.canvasRef.current) return;
-    const context = activeLayer.canvasRef.current.getContext("2d");
-    if (!context) return;
-    context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    saveToHistory();
-  };
-
-  const updateLayerState = (layerId: number, update: Partial<Layer>) => {
-      setLayers(current => current.map(l => l.id === layerId ? {...l, ...update} : l));
-  }
-
-  const undo = () => {
-    const activeLayer = getActiveLayer();
-    if (activeLayer && activeLayer.historyIndex > 0) {
-      const newIndex = activeLayer.historyIndex - 1;
-      updateLayerState(activeLayer.id, { historyIndex: newIndex });
-      restoreFromHistory({ ...activeLayer, historyIndex: newIndex });
-    }
-  };
-
-  const redo = () => {
-    const activeLayer = getActiveLayer();
-    if (activeLayer && activeLayer.historyIndex < activeLayer.history.length - 1) {
-       const newIndex = activeLayer.historyIndex + 1;
-      updateLayerState(activeLayer.id, { historyIndex: newIndex });
-      restoreFromHistory({ ...activeLayer, historyIndex: newIndex });
     }
   };
   
@@ -379,20 +344,6 @@ export default function ScenePage() {
         </div>
         
         <div className="absolute right-4 top-4 bottom-4 flex flex-col gap-4">
-            <Toolbox
-                tool={tool}
-                setTool={setTool}
-                color={color}
-                setColor={setColor}
-                penSize={penSize}
-                setPenSize={setPenSize}
-                undo={undo}
-                redo={redo}
-                clearCanvas={clearCanvas}
-                canUndo={activeLayer ? activeLayer.historyIndex > 0 : false}
-                canRedo={activeLayer ? activeLayer.historyIndex < activeLayer.history.length - 1 : false}
-                isStudio
-            />
             <Card className="w-64 bg-background/80 backdrop-blur-sm">
                 <CardContent className="p-2">
                     <div className="flex items-center justify-between p-2">
@@ -430,5 +381,4 @@ export default function ScenePage() {
       </div>
     </div>
   );
-
-    
+}
