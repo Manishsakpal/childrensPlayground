@@ -251,22 +251,24 @@ export default function ScenePage() {
       </div>
 
       <div className="absolute inset-0 flex w-[200%] animate-marquee py-8">
-          <div className="w-1/2 h-full flex-shrink-0 relative">
+          <div className="w-auto h-full flex-shrink-0 relative">
             <Image
               src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
               alt="Scene background"
-              fill
-              className="object-contain w-full h-full"
+              width={2000}
+              height={1000}
+              className="object-contain w-auto h-full"
               priority
               data-ai-hint="fantasy landscape"
             />
           </div>
-          <div className="w-1/2 h-full flex-shrink-0 relative">
+          <div className="w-auto h-full flex-shrink-0 relative">
             <Image
               src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
               alt="Scene background"
-              fill
-              className="object-contain w-full h-full"
+              width={2000}
+              height={1000}
+              className="object-contain w-auto h-full"
               priority
               aria-hidden="true"
               data-ai-hint="fantasy landscape"
