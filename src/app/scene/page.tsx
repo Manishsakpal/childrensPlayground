@@ -190,9 +190,21 @@ export default function ScenePage() {
           <CardHeader>
             <CardTitle>Your Creations</CardTitle>
             <CardDescription>Drag a drawing onto a layer.</CardDescription>
+             <div className="flex items-center gap-2 pt-2">
+                <Label htmlFor="multiplier" className="text-sm whitespace-nowrap">Speed Multiplier:</Label>
+                <Input 
+                    id="multiplier"
+                    type="number"
+                    value={movementMultiplier}
+                    onChange={(e) => setMovementMultiplier(Number(e.target.value))}
+                    className="w-20 h-8"
+                    min="0.1"
+                    step="0.1"
+                />
+            </div>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[calc(100vh-12rem)]">
+            <ScrollArea className="h-[calc(100vh-16rem)]">
               <div className="grid grid-cols-2 gap-4 pr-4">
                 {savedCreations.map((src, index) => (
                   <div key={`${src.slice(0, 20)}-${index}`} className="group cursor-grab">
@@ -297,21 +309,6 @@ export default function ScenePage() {
         </div>
       </div>
       
-      <div className="absolute bottom-6 left-6 z-20 bg-background/80 p-2 rounded-md shadow-lg text-foreground flex items-center gap-4">
-        <div className="flex items-center gap-2">
-            <Label htmlFor="multiplier" className="text-sm font-mono whitespace-nowrap">Speed Multiplier:</Label>
-            <Input 
-                id="multiplier"
-                type="number"
-                value={movementMultiplier}
-                onChange={(e) => setMovementMultiplier(Number(e.target.value))}
-                className="w-20 h-8 font-mono"
-                min="0.1"
-                step="0.1"
-            />
-        </div>
-      </div>
-
       <Button 
         size="icon" 
         className="absolute bottom-6 right-6 z-20 rounded-full h-14 w-14 shadow-lg"
