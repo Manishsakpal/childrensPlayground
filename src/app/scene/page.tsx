@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Toolbox } from "@/components/toolbox";
 import { Button } from "@/components/ui/button";
@@ -430,4 +430,5 @@ export default function ScenePage() {
       </div>
     </div>
   );
-}
+
+    
