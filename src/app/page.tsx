@@ -276,7 +276,7 @@ export default function DrawPage() {
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {savedCreations.map((src, index) => (
-                  <div key={src} className="relative group">
+                  <div key={`${src.slice(0, 20)}-${index}`} className="relative group">
                     <button
                       onClick={() => loadCreation(src)}
                       className="block w-full h-full rounded-md overflow-hidden border-2 border-transparent hover:border-primary focus:border-primary focus:outline-none"
