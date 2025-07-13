@@ -37,7 +37,6 @@ export default function ScenePage() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [draggedItem, setDraggedItem] = useState<{ src: string } | null>(null);
   const [movedImage, setMovedImage] = useState<MovedImageState | null>(null);
-  const [counter, setCounter] = useState(0);
   const [movementMultiplier, setMovementMultiplier] = useState(1);
 
   useEffect(() => {
@@ -145,8 +144,10 @@ export default function ScenePage() {
   useEffect(() => {
     if (!isMounted || movedImage) return;
 
+    const effectiveMultiplier = Math.max(0.1, movementMultiplier); // Prevent division by zero or negative intervals
+    const intervalDuration = 1000 / effectiveMultiplier;
+
     const intervalId = setInterval(() => {
-      setCounter(c => c + 1);
       setDroppedImages(currentImages => {
         if (currentImages.length === 0) return [];
         
@@ -155,8 +156,8 @@ export default function ScenePage() {
           if (!parentLayer) return img;
           
           const layerRect = parentLayer.getBoundingClientRect();
-          const moveX = (Math.random() - 0.5) * 10 * movementMultiplier;
-          const moveY = (Math.random() - 0.5) * 10 * movementMultiplier;
+          const moveX = (Math.random() - 0.5) * 200; // -100 to 100
+          const moveY = (Math.random() - 0.5) * 200; // -100 to 100
 
           let newX = img.x + moveX;
           let newY = img.y + moveY;
@@ -167,7 +168,7 @@ export default function ScenePage() {
           return { ...img, x: newX, y: newY };
         });
       });
-    }, 1000);
+    }, intervalDuration);
 
     return () => clearInterval(intervalId);
   }, [isMounted, movedImage, movementMultiplier]);
@@ -297,15 +298,16 @@ export default function ScenePage() {
       </div>
       
       <div className="absolute bottom-6 left-6 z-20 bg-background/80 p-2 rounded-md shadow-lg text-foreground flex items-center gap-4">
-        <p className="text-sm font-mono">Counter: {counter}</p>
         <div className="flex items-center gap-2">
-            <Label htmlFor="multiplier" className="text-sm font-mono">Multiplier:</Label>
+            <Label htmlFor="multiplier" className="text-sm font-mono whitespace-nowrap">Speed Multiplier:</Label>
             <Input 
                 id="multiplier"
                 type="number"
                 value={movementMultiplier}
                 onChange={(e) => setMovementMultiplier(Number(e.target.value))}
                 className="w-20 h-8 font-mono"
+                min="0.1"
+                step="0.1"
             />
         </div>
       </div>
