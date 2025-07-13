@@ -238,57 +238,52 @@ export default function ScenePage() {
     }
   };
   
-  const activeLayer = getActiveLayer();
-
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-800">
       <div className="flex-grow flex relative">
-        <div className="flex-grow flex items-center justify-center overflow-hidden relative">
-          <div className="absolute left-4 top-4 z-20">
-             <Sheet>
-                <SheetTrigger asChild>
-                    <Button variant="outline" size="icon">
-                        <Plus className="h-5 w-5" />
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0">
-                    <SheetHeader className="p-4 border-b">
-                        <SheetTitle>Add Drawing</SheetTitle>
-                    </SheetHeader>
-                     <div className="grid grid-cols-2 gap-2 p-4 max-h-[calc(100vh-80px)] overflow-y-auto">
-                        {savedCreations.map((src, index) => (
-                        <div key={`${src.slice(0, 20)}-${index}`} className="relative group">
-                            <button
-                            onClick={() => addLayer(src)}
-                            className="block w-full h-full rounded-md overflow-hidden border-2 border-transparent hover:border-primary focus:border-primary focus:outline-none"
-                            >
-                            <Image
-                                src={src}
-                                alt={`Saved creation ${index + 1}`}
-                                width={150}
-                                height={112}
-                                className="object-cover w-full h-full"
-                            />
-                            </button>
-                        </div>
-                        ))}
+        <div className="absolute left-4 top-4 z-20">
+            <Sheet>
+            <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                    <Plus className="h-5 w-5" />
+                </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0">
+                <SheetHeader className="p-4 border-b">
+                    <SheetTitle>Add Drawing</SheetTitle>
+                </SheetHeader>
+                    <div className="grid grid-cols-2 gap-2 p-4 max-h-[calc(100vh-80px)] overflow-y-auto">
+                    {savedCreations.map((src, index) => (
+                    <div key={`${src.slice(0, 20)}-${index}`} className="relative group">
+                        <button
+                        onClick={() => addLayer(src)}
+                        className="block w-full h-full rounded-md overflow-hidden border-2 border-transparent hover:border-primary focus:border-primary focus:outline-none"
+                        >
+                        <Image
+                            src={src}
+                            alt={`Saved creation ${index + 1}`}
+                            width={150}
+                            height={112}
+                            className="object-cover w-full h-full"
+                        />
+                        </button>
                     </div>
-                </SheetContent>
-             </Sheet>
-          </div>
-          <div 
+                    ))}
+                </div>
+            </SheetContent>
+            </Sheet>
+        </div>
+        <div 
             ref={viewportRef}
-            className="relative bg-gray-700" 
+            className="relative w-full h-full bg-gray-700"
             style={{ 
-              width: `min(calc(100vw - 320px), calc((100vh - 64px) * ${CANVAS_WIDTH} / ${CANVAS_HEIGHT}))`,
-              height: `min(calc(100vh - 64px), calc((100vw - 320px) * ${CANVAS_HEIGHT} / ${CANVAS_WIDTH}))`,
               cursor: tool === 'move' ? (isDragging ? 'grabbing' : 'grab') : 'crosshair'
             }}
             onMouseDown={startInteraction}
             onMouseMove={onInteract}
             onMouseUp={stopInteraction}
             onMouseLeave={stopInteraction}
-          >
+        >
             <div className="absolute inset-0 w-full h-full overflow-hidden">
                 <div className="w-full h-full animate-scroll-left flex">
                     <div className="relative w-full h-full flex-shrink-0">
@@ -327,9 +322,7 @@ export default function ScenePage() {
                 }}
               />
             ))}
-          </div>
         </div>
-        
       </div>
     </div>
   );
