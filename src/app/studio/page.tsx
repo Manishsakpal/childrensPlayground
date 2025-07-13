@@ -10,6 +10,7 @@ import { Toolbox } from "@/components/toolbox";
 import { cn } from "@/lib/utils";
 import { Layers, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
 
 type Tool = "pen" | "fill";
 const NUM_LAYERS = 4;
