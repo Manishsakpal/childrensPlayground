@@ -56,8 +56,7 @@ export default function DrawPage() {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       saveToHistory();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getCanvasContext]);
+  }, [getCanvasContext, saveToHistory]);
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -281,15 +280,16 @@ export default function DrawPage() {
 
       <Separator />
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-bold tracking-tight">Saved Creations</h2>
-        <Card>
-          <CardContent className="p-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Saved Creations</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
             {drawings.length === 0 ? (
               <p className="text-muted-foreground text-center">No saved drawings yet. Create and save one!</p>
             ) : (
                 <ScrollArea className="h-48">
-                    <div className="flex gap-4 pb-4">
+                    <div className="flex flex-wrap gap-4 pb-4">
                     {drawings.map((src, index) => (
                         <div key={index} className="relative group shrink-0">
                         <Image
@@ -312,9 +312,8 @@ export default function DrawPage() {
                     </div>
               </ScrollArea>
             )}
-          </CardContent>
-        </Card>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
