@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 
 export default function ScenePage() {
@@ -6,7 +8,7 @@ export default function ScenePage() {
       <div className="absolute top-0 left-0 flex w-[200%] h-full">
         <div className="relative w-1/2 h-full animate-scroll-left">
           <Image
-            src="/background-scene.jpg"
+            src="https://placehold.co/1920x1080.png"
             alt="Forest scene"
             layout="fill"
             objectFit="cover"
@@ -16,7 +18,7 @@ export default function ScenePage() {
         </div>
         <div className="relative w-1/2 h-full animate-scroll-left">
           <Image
-            src="/background-scene.jpg"
+            src="https://placehold.co/1920x1080.png"
             alt="Forest scene"
             layout="fill"
             objectFit="cover"
