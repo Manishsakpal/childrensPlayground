@@ -7,15 +7,8 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Button } from "@/components/ui/button";
 import { Plus, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetDescription
-} from "@/components/ui/sheet";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type LayerName = 'sky' | 'trees' | 'land' | 'water';
 
@@ -42,7 +35,7 @@ export default function ScenePage() {
     land: [],
     water: [],
   });
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -59,9 +52,11 @@ export default function ScenePage() {
 
     const targetRect = e.currentTarget.getBoundingClientRect();
     
+    // The image size is fixed for now, we can make this dynamic if needed
     const imageWidth = 150; 
     const imageHeight = 112;
     
+    // Calculate position relative to the drop target (the layer div)
     const x = e.clientX - targetRect.left - (imageWidth / 2);
     const y = e.clientY - targetRect.top - (imageHeight / 2);
 
@@ -77,11 +72,11 @@ export default function ScenePage() {
       [layer]: [...prevLayers[layer], newImage],
     }));
     
-    setIsSheetOpen(false); // Auto-close sheet after drop
+    setIsPanelOpen(false); // Auto-close panel after drop
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
+    e.preventDefault(); // This is necessary to allow dropping
   };
   
   const deleteDroppedImage = (layerName: LayerName, imageId: string) => {
@@ -100,14 +95,54 @@ export default function ScenePage() {
 
   if (!isMounted) {
     return (
-        <div className="flex items-center justify-center h-screen">
+        <div className="flex items-center justify-center h-screen bg-background">
             <div className="text-2xl text-muted-foreground">Loading Scene...</div>
         </div>
     );
   }
 
   return (
-    <div className="relative w-full h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="flex h-[calc(100vh-4rem)] bg-background">
+      <div 
+        className={cn(
+          "bg-card border-r transition-all duration-300 ease-in-out",
+          isPanelOpen ? "w-80 p-4" : "w-0 p-0"
+        )}
+      >
+        {isPanelOpen && (
+          <Card className="h-full w-full rounded-none border-0 mt-4">
+            <CardHeader>
+              <CardTitle>Your Creations</CardTitle>
+              <CardDescription>Drag a drawing onto a layer.</CardDescription>
+            </CardHeader>
+            <ScrollArea className="h-[calc(100%-120px)]">
+              <CardContent>
+                <div className="py-4 grid grid-cols-2 gap-4">
+                  {savedCreations.length > 0 ? (
+                    savedCreations.map((src, index) => (
+                      <div key={`${src.slice(-10)}-${index}`} className="cursor-grab active:cursor-grabbing group relative">
+                        <Image
+                          src={src}
+                          alt={`Saved creation ${index + 1}`}
+                          width={150}
+                          height={112}
+                          className="object-cover w-full h-full rounded-md border"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, src)}
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground col-span-2 text-center">No saved drawings found. Go to the "Draw" page to create some!</p>
+                  )}
+                </div>
+              </CardContent>
+            </ScrollArea>
+          </Card>
+        )}
+      </div>
+
+      <div className="flex-1 relative">
         <div className="absolute inset-0 w-[200%] h-full flex">
           <Image
             src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
@@ -118,84 +153,56 @@ export default function ScenePage() {
             priority
           />
         </div>
-      
-      <div className="absolute inset-0">
-        {layerConfigs.map(config => (
-          <div
-            key={config.name}
-            onDrop={(e) => handleDrop(e, config.name)}
-            onDragOver={handleDragOver}
-            className={cn(
-              "absolute left-0 w-full border-2 border-transparent transition-all duration-300",
-              config.hoverClass
-            )}
-            style={config.style}
-            title={config.title}
-          >
-            {layers[config.name].map(image => (
-              <div 
-                key={image.id}
-                className="absolute group"
-                style={{ left: `${image.x}px`, top: `${image.y}px`, width: 150, height: 112 }}
-              >
-                <Image
-                  src={image.src}
-                  alt="Dropped drawing"
-                  width={150} 
-                  height={112}
-                  className="pointer-events-none"
-                />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
-                  onClick={() => deleteDroppedImage(config.name, image.id)}
+
+        <div className="absolute inset-0">
+          {layerConfigs.map(config => (
+            <div
+              key={config.name}
+              onDrop={(e) => handleDrop(e, config.name)}
+              onDragOver={handleDragOver}
+              className={cn(
+                "absolute left-0 w-full border-2 border-transparent transition-all duration-300",
+                config.hoverClass
+              )}
+              style={config.style}
+              title={config.title}
+            >
+              {layers[config.name].map(image => (
+                <div 
+                  key={image.id}
+                  className="absolute group"
+                  style={{ left: `${image.x}px`, top: `${image.y}px`, width: 150, height: 112 }}
                 >
-                  <XCircle className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        ))}
+                  <Image
+                    src={image.src}
+                    alt="Dropped drawing"
+                    width={150} 
+                    height={112}
+                    className="pointer-events-none rounded-md"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity rounded-full z-10"
+                    onClick={() => deleteDroppedImage(config.name, image.id)}
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        
+        <Button
+          variant="default"
+          className="absolute bottom-6 right-6 z-20 rounded-full h-14 w-14 shadow-lg"
+          onClick={() => setIsPanelOpen(!isPanelOpen)}
+        >
+          <Plus className="h-6 w-6" />
+          <span className="sr-only">Add Drawing</span>
+        </Button>
       </div>
-      
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetTrigger asChild>
-          <Button variant="default" className="absolute bottom-6 right-6 z-10 rounded-full h-14 w-14 shadow-lg">
-            <Plus className="h-6 w-6" />
-            <span className="sr-only">Add Drawing</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left">
-          <SheetHeader>
-            <SheetTitle>Your Creations</SheetTitle>
-            <SheetDescription>Drag a drawing onto a layer.</SheetDescription>
-          </SheetHeader>
-          <Card className="h-full w-full rounded-none border-0 mt-4">
-            <CardContent>
-              <div className="py-4 grid grid-cols-2 gap-4">
-                {savedCreations.length > 0 ? (
-                  savedCreations.map((src, index) => (
-                    <div key={`${src.slice(-10)}-${index}`} className="cursor-grab active:cursor-grabbing">
-                      <Image
-                        src={src}
-                        alt={`Saved creation ${index + 1}`}
-                        width={150}
-                        height={112}
-                        className="object-cover w-full h-full rounded-md border"
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, src)}
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground col-span-2">No saved drawings found. Go to the "Draw" page to create some!</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
