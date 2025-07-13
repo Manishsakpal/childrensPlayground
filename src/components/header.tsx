@@ -12,6 +12,7 @@ export function Header() {
   const navItems: { href: string; label: string }[] = [
     { href: "/", label: "Draw" },
     { href: "/scene", label: "Scene" },
+    { href: "/studio", label: "Studio" },
   ];
 
   return (

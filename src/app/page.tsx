@@ -250,18 +250,20 @@ export default function DrawPage() {
 
   return (
     <div className="container mx-auto p-4 flex flex-col lg:flex-row gap-8 items-start justify-center">
-      <div className="flex-grow flex flex-col items-center max-w-[800px]">
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_WIDTH}
-          height={CANVAS_HEIGHT}
-          className="border rounded-lg shadow-lg bg-white"
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onClick={handleCanvasClick}
-        />
+      <div className="flex-grow flex flex-col items-center">
+        <div className="relative" style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
+            <canvas
+              ref={canvasRef}
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              className="border rounded-lg shadow-lg bg-white absolute top-0 left-0"
+              onMouseDown={startDrawing}
+              onMouseMove={draw}
+              onMouseUp={stopDrawing}
+              onMouseLeave={stopDrawing}
+              onClick={handleCanvasClick}
+            />
+        </div>
         <Toolbox
           tool={tool}
           setTool={setTool}
@@ -276,8 +278,8 @@ export default function DrawPage() {
           canUndo={historyIndex > 0}
           canRedo={historyIndex < history.length - 1}
         />
-        {savedCreations.length > 0 && (
-          <Card className="mt-4 w-full max-w-[800px]">
+        {isMounted && savedCreations.length > 0 && (
+          <Card className="mt-4 w-full" style={{ maxWidth: CANVAS_WIDTH }}>
             <CardHeader>
               <CardTitle>Saved Creations</CardTitle>
               <CardDescription>Click to load a drawing.</CardDescription>
