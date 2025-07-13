@@ -256,7 +256,7 @@ export default function ScenePage() {
               src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
               alt="Scene background"
               fill
-              className="object-cover w-full h-full"
+              className="object-contain w-full h-full"
               priority
               data-ai-hint="fantasy landscape"
             />
@@ -266,7 +266,7 @@ export default function ScenePage() {
               src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
               alt="Scene background"
               fill
-              className="object-cover w-full h-full"
+              className="object-contain w-full h-full"
               priority
               aria-hidden="true"
               data-ai-hint="fantasy landscape"
