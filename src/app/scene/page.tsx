@@ -98,14 +98,10 @@ export default function ScenePage() {
     e.preventDefault();
     e.stopPropagation();
     
-    const parentLayer = document.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLElement;
-    if (!parentLayer) return;
-    const layerRect = parentLayer.getBoundingClientRect();
-
     setMovedImage({
       id: img.id,
-      offsetX: e.clientX - layerRect.left - img.x,
-      offsetY: e.clientY - layerRect.top - img.y,
+      offsetX: e.clientX - img.x,
+      offsetY: e.clientY - img.y,
     });
   };
 
@@ -122,8 +118,8 @@ export default function ScenePage() {
 
         const layerRect = parentLayer.getBoundingClientRect();
         
-        let newX = e.clientX - layerRect.left - movedImage.offsetX;
-        let newY = e.clientY - layerRect.top - movedImage.offsetY;
+        let newX = e.clientX - movedImage.offsetX;
+        let newY = e.clientY - movedImage.offsetY;
 
         newX = Math.max(0, Math.min(newX, layerRect.width - img.width));
         newY = Math.max(0, Math.min(newY, layerRect.height - img.height));
@@ -269,7 +265,7 @@ export default function ScenePage() {
                   <div 
                     key={img.id} 
                     className={cn(
-                      "absolute group transition-all duration-1000 ease-linear",
+                      "absolute group",
                       movedImage?.id === img.id ? "cursor-grabbing z-30" : "cursor-grab z-20"
                     )}
                     style={{ 
@@ -277,7 +273,7 @@ export default function ScenePage() {
                       top: img.y, 
                       width: img.width, 
                       height: img.height,
-                      transition: isMovementEnabled ? 'left 1s ease-in-out, top 1s ease-in-out' : 'none'
+                      transition: isMovementEnabled && !movedImage ? 'left 1s ease-in-out, top 1s ease-in-out' : 'none'
                     }}
                     onMouseDown={(e) => handleMouseDownOnImage(e, img)}
                     onMouseEnter={() => setHoveredImageId(img.id)}
