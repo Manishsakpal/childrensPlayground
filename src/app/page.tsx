@@ -2,7 +2,12 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { Toolbox } from "@/components/toolbox";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { XCircle } from "lucide-react";
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -17,6 +22,7 @@ export default function DrawPage() {
   const [penSize, setPenSize] = useState(5);
   const [history, setHistory] = useState<ImageData[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [savedCreations, setSavedCreations] = useLocalStorage<string[]>("saved-creations", []);
 
   const saveToHistory = useCallback(() => {
     const canvas = canvasRef.current;
@@ -28,14 +34,15 @@ export default function DrawPage() {
     const newImageData = context.getImageData(0, 0, canvas.width, canvas.height);
     
     if (historyIndex > -1) {
-        const lastImageData = history[historyIndex];
-        if (newImageData.data.toString() === lastImageData.data.toString()) {
+        const lastImageData = newHistory[historyIndex];
+        if (lastImageData && newImageData.data.toString() === lastImageData.data.toString()) {
             return;
         }
     }
     
-    setHistory([...newHistory, newImageData]);
-    setHistoryIndex(newHistory.length);
+    const updatedHistory = [...newHistory, newImageData];
+    setHistory(updatedHistory);
+    setHistoryIndex(updatedHistory.length - 1);
   }, [history, historyIndex]);
 
 
@@ -55,9 +62,13 @@ export default function DrawPage() {
     
     context.fillStyle = "white";
     context.fillRect(0, 0, canvas.width, canvas.height);
-    const initialImageData = context.getImageData(0, 0, canvas.width, canvas.height);
-    setHistory([initialImageData]);
-    setHistoryIndex(0);
+    
+    // Only set initial history if it's empty
+    if (history.length === 0) {
+        const initialImageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        setHistory([initialImageData]);
+        setHistoryIndex(0);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -114,7 +125,7 @@ export default function DrawPage() {
   const floodFill = (x: number, y: number, fillColor: number[]) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
     
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -192,9 +203,29 @@ export default function DrawPage() {
   const saveCreation = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    // For now, we just log it. A real app would save to a gallery or cloud.
-    console.log("Saving creation:", canvas.toDataURL("image/png"));
-    alert("Creation saved! (Check console for data URL)");
+    const dataUrl = canvas.toDataURL("image/png");
+    setSavedCreations([dataUrl, ...savedCreations]);
+  };
+  
+  const loadCreation = (dataUrl: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    const img = new window.Image();
+    img.src = dataUrl;
+    img.onload = () => {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(img, 0, 0);
+      saveToHistory();
+    }
+  };
+
+  const deleteCreation = (index: number) => {
+    const newCreations = [...savedCreations];
+    newCreations.splice(index, 1);
+    setSavedCreations(newCreations);
   };
 
   const undo = () => {
@@ -237,6 +268,42 @@ export default function DrawPage() {
           canUndo={historyIndex > 0}
           canRedo={historyIndex < history.length - 1}
         />
+        {savedCreations.length > 0 && (
+          <Card className="mt-4 w-full max-w-[800px]">
+            <CardHeader>
+              <CardTitle>Saved Creations</CardTitle>
+              <CardDescription>Click to load a drawing.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {savedCreations.map((src, index) => (
+                  <div key={index} className="relative group">
+                    <button
+                      onClick={() => loadCreation(src)}
+                      className="block w-full h-full rounded-md overflow-hidden border-2 border-transparent hover:border-primary focus:border-primary focus:outline-none"
+                    >
+                      <Image
+                        src={src}
+                        alt={`Saved creation ${index + 1}`}
+                        width={150}
+                        height={112}
+                        className="object-cover w-full h-full"
+                      />
+                    </button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => deleteCreation(index)}
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
