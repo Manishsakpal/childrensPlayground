@@ -57,8 +57,12 @@ export default function ScenePage() {
     if (!src) return;
 
     const targetRect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - targetRect.left;
-    const y = e.clientY - targetRect.top;
+    
+    const imageWidth = 150; 
+    const imageHeight = 112;
+    
+    const x = e.clientX - targetRect.left - (imageWidth / 2);
+    const y = e.clientY - targetRect.top - (imageHeight / 2);
 
     const newImage: DroppedImage = {
       id: `${layer}-${Date.now()}`,
@@ -126,7 +130,7 @@ export default function ScenePage() {
         </SidebarContent>
       </Sidebar>
       <SidebarInset className="p-0 m-0 min-h-screen">
-        <div className="relative w-full h-[calc(100vh-64px)] overflow-hidden">
+        <div className="relative w-full h-screen overflow-hidden">
           <div className="absolute inset-0 w-full h-full">
             <Image
               src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
@@ -158,18 +162,16 @@ export default function ScenePage() {
                     width={150} 
                     height={112}
                     className="absolute"
-                    style={{ left: `${image.x - 75}px`, top: `${image.y - 56}px`, pointerEvents: 'none' }}
+                    style={{ left: `${image.x}px`, top: `${image.y}px`, pointerEvents: 'none' }}
                   />
                 ))}
               </div>
             ))}
           </div>
           
-          <SidebarTrigger asChild>
-            <Button className="absolute bottom-6 right-6 z-10 rounded-full h-14 w-14 shadow-lg">
-              <Plus className="h-6 w-6" />
-              <span className="sr-only">Add Drawing</span>
-            </Button>
+          <SidebarTrigger variant="default" className="absolute bottom-6 right-6 z-10 rounded-full h-14 w-14 shadow-lg">
+            <Plus className="h-6 w-6" />
+            <span className="sr-only">Add Drawing</span>
           </SidebarTrigger>
         </div>
       </SidebarInset>
