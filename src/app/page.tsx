@@ -3,12 +3,11 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Toolbox } from "@/components/toolbox";
-import { useLocalStorage } from "@/hooks/use-local-storage";
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
-type Tool = "pen" | "fill";
+type Tool = "pen" | "fill" | "eraser";
 
 export default function DrawPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -18,11 +17,6 @@ export default function DrawPage() {
   const [penSize, setPenSize] = useState(5);
   const [history, setHistory] = useState<ImageData[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-
-  const [savedCreations, setSavedCreations] = useLocalStorage<string[]>(
-    "saved-creations",
-    []
-  );
 
   const saveToHistory = useCallback(() => {
     const canvas = canvasRef.current;
@@ -61,9 +55,11 @@ export default function DrawPage() {
     
     context.fillStyle = "white";
     context.fillRect(0, 0, canvas.width, canvas.height);
-    saveToHistory();
+    const initialImageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    setHistory([initialImageData]);
+    setHistoryIndex(0);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on mount
+  }, []);
 
   useEffect(() => {
     restoreFromHistory();
@@ -75,19 +71,25 @@ export default function DrawPage() {
     const context = canvas.getContext("2d");
     if (!context) return;
 
-    if (tool === "pen") {
+    if (tool === "pen" || tool === "eraser") {
       setIsDrawing(true);
       context.beginPath();
       context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
       context.lineWidth = penSize;
-      context.strokeStyle = color;
       context.lineCap = "round";
       context.lineJoin = "round";
+      
+      if (tool === "pen") {
+        context.globalCompositeOperation = "source-over";
+        context.strokeStyle = color;
+      } else { // Eraser
+        context.globalCompositeOperation = "destination-out";
+      }
     }
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || tool !== "pen") return;
+    if (!isDrawing || (tool !== "pen" && tool !== "eraser")) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const context = canvas.getContext("2d");
@@ -106,6 +108,7 @@ export default function DrawPage() {
        setIsDrawing(false);
        saveToHistory();
     }
+    context.globalCompositeOperation = "source-over";
   };
 
   const floodFill = (x: number, y: number, fillColor: number[]) => {
@@ -189,8 +192,9 @@ export default function DrawPage() {
   const saveCreation = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL("image/png");
-    setSavedCreations([dataUrl, ...savedCreations]);
+    // For now, we just log it. A real app would save to a gallery or cloud.
+    console.log("Saving creation:", canvas.toDataURL("image/png"));
+    alert("Creation saved! (Check console for data URL)");
   };
 
   const undo = () => {

@@ -10,6 +10,7 @@ import {
   Save,
   Minus,
   Plus,
+  Eraser,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +22,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 
-type Tool = "pen" | "fill";
+type Tool = "pen" | "fill" | "eraser";
 
 interface ToolboxProps {
   tool: Tool;
@@ -84,6 +85,21 @@ export function Toolbox({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Fill</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={tool === "eraser" ? "secondary" : "outline"}
+                  size="icon"
+                  onClick={() => setTool("eraser")}
+                >
+                  <Eraser className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Eraser</p>
               </TooltipContent>
             </Tooltip>
 
