@@ -9,6 +9,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Plus, XCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type LayerName = 'sky' | 'trees' | 'land' | 'water';
 
@@ -36,6 +38,7 @@ export default function ScenePage() {
   const [draggedItem, setDraggedItem] = useState<{ src: string } | null>(null);
   const [movedImage, setMovedImage] = useState<MovedImageState | null>(null);
   const [counter, setCounter] = useState(0);
+  const [movementMultiplier, setMovementMultiplier] = useState(1);
 
   useEffect(() => {
     setIsMounted(true);
@@ -84,10 +87,16 @@ export default function ScenePage() {
     e.preventDefault();
     e.stopPropagation();
     
+    // Find the layer element to get its client bounding rect
+    const parentLayer = document.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLElement;
+    if (!parentLayer) return;
+    const layerRect = parentLayer.getBoundingClientRect();
+
     setMovedImage({
       id: img.id,
-      offsetX: e.clientX - img.x,
-      offsetY: e.clientY - img.y,
+      // Calculate offset from the image's top-left corner relative to the layer
+      offsetX: e.clientX - layerRect.left - img.x,
+      offsetY: e.clientY - layerRect.top - img.y,
     });
   };
 
@@ -123,15 +132,12 @@ export default function ScenePage() {
 
   useEffect(() => {
     if (movedImage) {
-      const handleGlobalMouseMove = (e: MouseEvent) => handleMouseMove(e);
-      const handleGlobalMouseUp = () => handleMouseUp();
-      
-      document.addEventListener('mousemove', handleGlobalMouseMove);
-      document.addEventListener('mouseup', handleGlobalMouseUp);
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
 
       return () => {
-        document.removeEventListener('mousemove', handleGlobalMouseMove);
-        document.removeEventListener('mouseup', handleGlobalMouseUp);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
       };
     }
   }, [movedImage, handleMouseMove, handleMouseUp]);
@@ -149,8 +155,8 @@ export default function ScenePage() {
           if (!parentLayer) return img;
           
           const layerRect = parentLayer.getBoundingClientRect();
-          const moveX = (Math.random() - 0.5) * 4;
-          const moveY = (Math.random() - 0.5) * 4;
+          const moveX = (Math.random() - 0.5) * 10 * movementMultiplier;
+          const moveY = (Math.random() - 0.5) * 10 * movementMultiplier;
 
           let newX = img.x + moveX;
           let newY = img.y + moveY;
@@ -164,7 +170,7 @@ export default function ScenePage() {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [isMounted, movedImage]);
+  }, [isMounted, movedImage, movementMultiplier]);
 
 
   if (!isMounted) {
@@ -290,8 +296,18 @@ export default function ScenePage() {
         </div>
       </div>
       
-      <div className="absolute bottom-6 left-6 z-20 bg-background/80 p-2 rounded-md shadow-lg text-foreground">
+      <div className="absolute bottom-6 left-6 z-20 bg-background/80 p-2 rounded-md shadow-lg text-foreground flex items-center gap-4">
         <p className="text-sm font-mono">Counter: {counter}</p>
+        <div className="flex items-center gap-2">
+            <Label htmlFor="multiplier" className="text-sm font-mono">Multiplier:</Label>
+            <Input 
+                id="multiplier"
+                type="number"
+                value={movementMultiplier}
+                onChange={(e) => setMovementMultiplier(Number(e.target.value))}
+                className="w-20 h-8 font-mono"
+            />
+        </div>
       </div>
 
       <Button 
