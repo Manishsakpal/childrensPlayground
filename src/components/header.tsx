@@ -21,8 +21,8 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center">
+    <header className="absolute top-0 left-0 right-0 z-50 h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-full items-center">
         <Link href="/" className="mr-6 flex items-center space-x-2">
           <Paintbrush className="h-6 w-6 text-primary" />
           <span className="font-bold sm:inline-block">Layered Canvas</span>
