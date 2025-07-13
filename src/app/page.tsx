@@ -4,16 +4,6 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Toolbox } from "@/components/toolbox";
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -43,7 +33,6 @@ export default function DrawPage() {
     const newHistory = history.slice(0, historyIndex + 1);
     const newImageData = context.getImageData(0, 0, canvas.width, canvas.height);
     
-    // Prevent saving identical states consecutively
     if (historyIndex > -1) {
         const lastImageData = history[historyIndex];
         if (newImageData.data.toString() === lastImageData.data.toString()) {
@@ -204,27 +193,6 @@ export default function DrawPage() {
     setSavedCreations([dataUrl, ...savedCreations]);
   };
 
-  const deleteCreation = (index: number) => {
-    const newCreations = [...savedCreations];
-    newCreations.splice(index, 1);
-    setSavedCreations(newCreations);
-  }
-
-  const loadCreation = (dataUrl: string) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext('2d');
-    if (!context) return;
-
-    const img = new window.Image();
-    img.onload = () => {
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(img, 0, 0);
-      saveToHistory();
-    };
-    img.src = dataUrl;
-  }
-
   const undo = () => {
     if (historyIndex > 0) {
       setHistoryIndex(historyIndex - 1);
@@ -238,8 +206,8 @@ export default function DrawPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 flex flex-col lg:flex-row gap-8 items-start">
-      <div className="flex-grow flex flex-col items-center">
+    <div className="container mx-auto p-4 flex flex-col lg:flex-row gap-8 items-start justify-center">
+      <div className="flex-grow flex flex-col items-center max-w-[800px]">
         <canvas
           ref={canvasRef}
           width={CANVAS_WIDTH}
@@ -266,41 +234,6 @@ export default function DrawPage() {
           canRedo={historyIndex < history.length - 1}
         />
       </div>
-
-      <Card className="w-full lg:w-80">
-        <CardHeader>
-          <CardTitle>Saved Creations</CardTitle>
-          <CardDescription>Click to load a drawing.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {savedCreations.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No saved creations yet.</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {savedCreations.map((src, index) => (
-                <div key={index} className="relative group">
-                   <Image
-                      src={src}
-                      alt={`Saved creation ${index + 1}`}
-                      width={150}
-                      height={112}
-                      className="rounded-md border-2 border-transparent hover:border-primary cursor-pointer"
-                      onClick={() => loadCreation(src)}
-                    />
-                    <Button 
-                      variant="destructive" 
-                      size="icon" 
-                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => deleteCreation(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
