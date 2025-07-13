@@ -34,11 +34,13 @@ export default function DrawPage() {
   const saveToHistory = useCallback(() => {
     const ctx = getCanvasContext();
     if (!ctx || !ctx.canvas) return;
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-  }, [getCanvasContext, history, historyIndex]);
+    setHistory(prevHistory => {
+        const newHistory = prevHistory.slice(0, historyIndex + 1);
+        newHistory.push(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
+        setHistoryIndex(newHistory.length - 1);
+        return newHistory;
+    });
+  }, [getCanvasContext, historyIndex]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -54,7 +56,8 @@ export default function DrawPage() {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       saveToHistory();
     }
-  }, [getCanvasContext, saveToHistory]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getCanvasContext]);
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
