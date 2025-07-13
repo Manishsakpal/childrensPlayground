@@ -5,9 +5,17 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
 type LayerName = 'sky' | 'trees' | 'land' | 'water';
 
@@ -28,7 +36,7 @@ interface Layers {
 export default function ScenePage() {
   const [isMounted, setIsMounted] = useState(false);
   const [savedCreations] = useLocalStorage<string[]>("saved-creations", []);
-  const [layers, setLayers] = useState<Layers>({
+  const [layers, setLayers] = useLocalStorage<Layers>("scene-layers", {
     sky: [],
     trees: [],
     land: [],
@@ -85,79 +93,86 @@ export default function ScenePage() {
   }
 
   return (
-    <div className="relative w-screen h-[calc(100vh-64px)] overflow-hidden">
-      <div className="absolute inset-0 w-full h-full">
-        <Image
-          src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-          alt="Scene background"
-          layout="fill"
-          objectFit="cover"
-          priority
-        />
-      </div>
+    <SidebarProvider>
+      <Sidebar side="left" collapsible="icon" className="w-80">
+        <SidebarContent className="p-0">
+          <Card className="h-full w-full rounded-none border-0">
+            <CardHeader>
+              <CardTitle>Your Creations</CardTitle>
+              <CardDescription>Drag a drawing onto a layer.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="py-4 grid grid-cols-2 gap-4">
+                {savedCreations.length > 0 ? (
+                  savedCreations.map((src, index) => (
+                    <div key={`${src.slice(-10)}-${index}`} className="cursor-grab active:cursor-grabbing">
+                      <Image
+                        src={src}
+                        alt={`Saved creation ${index + 1}`}
+                        width={150}
+                        height={112}
+                        className="object-cover w-full h-full rounded-md border"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, src)}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground col-span-2">No saved drawings found. Go to the "Draw" page to create some!</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset className="p-0 m-0 min-h-screen">
+        <div className="relative w-full h-[calc(100vh-64px)] overflow-hidden">
+          <div className="absolute inset-0 w-full h-full">
+            <Image
+              src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+              alt="Scene background"
+              layout="fill"
+              objectFit="cover"
+              priority
+            />
+          </div>
 
-      {/* Layers Container */}
-      <div className="absolute inset-0">
-        {layerConfigs.map(config => (
-          <div
-            key={config.name}
-            onDrop={(e) => handleDrop(e, config.name)}
-            onDragOver={handleDragOver}
-            className={cn(
-              "absolute left-0 w-full border-2 border-transparent transition-all duration-300",
-              config.hoverClass
-            )}
-            style={config.style}
-            title={config.title}
-          >
-            {layers[config.name].map(image => (
-              <Image
-                key={image.id}
-                src={image.src}
-                alt="Dropped drawing"
-                width={150} 
-                height={112}
-                className="absolute"
-                style={{ left: `${image.x - 75}px`, top: `${image.y - 56}px`, pointerEvents: 'none' }}
-              />
+          <div className="absolute inset-0">
+            {layerConfigs.map(config => (
+              <div
+                key={config.name}
+                onDrop={(e) => handleDrop(e, config.name)}
+                onDragOver={handleDragOver}
+                className={cn(
+                  "absolute left-0 w-full border-2 border-transparent transition-all duration-300",
+                  config.hoverClass
+                )}
+                style={config.style}
+                title={config.title}
+              >
+                {layers[config.name].map(image => (
+                  <Image
+                    key={image.id}
+                    src={image.src}
+                    alt="Dropped drawing"
+                    width={150} 
+                    height={112}
+                    className="absolute"
+                    style={{ left: `${image.x - 75}px`, top: `${image.y - 56}px`, pointerEvents: 'none' }}
+                  />
+                ))}
+              </div>
             ))}
           </div>
-        ))}
-      </div>
-      
-      {/* Floating Add Button */}
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button className="absolute bottom-6 right-6 z-10 rounded-full h-14 w-14 shadow-lg">
-            <Plus className="h-6 w-6" />
-            <span className="sr-only">Add Drawing</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Your Creations</SheetTitle>
-          </SheetHeader>
-          <div className="py-4 grid grid-cols-2 gap-4">
-            {savedCreations.length > 0 ? (
-              savedCreations.map((src, index) => (
-                <div key={`${src.slice(-10)}-${index}`} className="cursor-grab active:cursor-grabbing">
-                  <Image
-                    src={src}
-                    alt={`Saved creation ${index + 1}`}
-                    width={150}
-                    height={112}
-                    className="object-cover w-full h-full rounded-md border"
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, src)}
-                  />
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground col-span-2">No saved drawings found. Go to the "Draw" page to create some!</p>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
-    </div>
+          
+          <SidebarTrigger asChild>
+            <Button className="absolute bottom-6 right-6 z-10 rounded-full h-14 w-14 shadow-lg">
+              <Plus className="h-6 w-6" />
+              <span className="sr-only">Add Drawing</span>
+            </Button>
+          </SidebarTrigger>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
