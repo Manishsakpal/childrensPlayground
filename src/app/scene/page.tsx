@@ -216,7 +216,7 @@ export default function ScenePage() {
   }
 
   return (
-    <div className="bg-background overflow-hidden relative h-[calc(100vh-4rem)]">
+    <div className="bg-background overflow-hidden relative" style={{ height: 'calc(100vh - 4rem)' }}>
       <div 
         className={cn(
           "absolute top-0 left-0 h-full w-80 bg-background/80 backdrop-blur-sm z-30 transition-transform duration-300 ease-in-out",
@@ -250,7 +250,7 @@ export default function ScenePage() {
         </Card>
       </div>
 
-      <div className="absolute inset-0 flex w-[200%] animate-marquee">
+      <div className="absolute inset-0 flex w-[200%] animate-marquee py-8">
           <div className="w-1/2 h-full flex-shrink-0 relative">
             <Image
               src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
