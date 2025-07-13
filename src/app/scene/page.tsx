@@ -8,23 +8,21 @@ export default function ScenePage() {
       <div className="flex w-max animate-scroll-left">
         <div className="flex-shrink-0">
           <Image
-            src="https://placehold.co/1920x1080.png"
+            src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
             alt="Scrolling scene background"
             width={1920}
             height={1080}
             className="h-[calc(100vh-64px)] w-auto"
-            data-ai-hint="forest landscape"
             priority
           />
         </div>
         <div className="flex-shrink-0">
           <Image
-            src="https://placehold.co/1920x1080.png"
+            src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
             alt="Scrolling scene background"
             width={1920}
             height={1080}
             className="h-[calc(100vh-64px)] w-auto"
-            data-ai-hint="forest landscape"
             aria-hidden="true"
           />
         </div>
