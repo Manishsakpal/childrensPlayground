@@ -46,7 +46,7 @@ export default function ScenePage() {
             alt="Scene background"
             width={3840}
             height={1080}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain animate-scroll-left"
             priority
             aria-hidden="true"
           />
