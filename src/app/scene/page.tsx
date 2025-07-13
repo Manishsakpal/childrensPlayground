@@ -8,15 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Plus, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetDescription
+} from "@/components/ui/sheet";
+import { Card, CardContent } from "@/components/ui/card";
 
 type LayerName = 'sky' | 'trees' | 'land' | 'water';
 
@@ -34,7 +33,7 @@ interface Layers {
   water: DroppedImage[];
 }
 
-function ScenePageContent() {
+export default function ScenePage() {
   const [isMounted, setIsMounted] = useState(false);
   const [savedCreations] = useLocalStorage<string[]>("saved-creations", []);
   const [layers, setLayers] = useLocalStorage<Layers>("scene-layers", {
@@ -43,8 +42,7 @@ function ScenePageContent() {
     land: [],
     water: [],
   });
-  
-  const { setOpen: setSidebarOpen } = useSidebar();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -79,8 +77,7 @@ function ScenePageContent() {
       [layer]: [...prevLayers[layer], newImage],
     }));
     
-    // Auto-close sidebar after drop
-    setSidebarOpen(false);
+    setIsSheetOpen(false); // Auto-close sheet after drop
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -110,14 +107,71 @@ function ScenePageContent() {
   }
 
   return (
-    <>
-      <Sidebar side="left" collapsible="icon" className="w-80">
-        <SidebarContent className="p-0">
-          <Card className="h-full w-full rounded-none border-0">
-            <CardHeader>
-              <CardTitle>Your Creations</CardTitle>
-              <CardDescription>Drag a drawing onto a layer.</CardDescription>
-            </CardHeader>
+    <div className="relative w-full h-[calc(100vh-4rem)] overflow-hidden">
+        <div className="absolute inset-0 w-[200%] h-full flex">
+          <Image
+            src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
+            alt="Scene background"
+            width={3840}
+            height={1080}
+            className="w-full h-full object-cover animate-scroll-left"
+            priority
+          />
+        </div>
+      
+      <div className="absolute inset-0">
+        {layerConfigs.map(config => (
+          <div
+            key={config.name}
+            onDrop={(e) => handleDrop(e, config.name)}
+            onDragOver={handleDragOver}
+            className={cn(
+              "absolute left-0 w-full border-2 border-transparent transition-all duration-300",
+              config.hoverClass
+            )}
+            style={config.style}
+            title={config.title}
+          >
+            {layers[config.name].map(image => (
+              <div 
+                key={image.id}
+                className="absolute group"
+                style={{ left: `${image.x}px`, top: `${image.y}px`, width: 150, height: 112 }}
+              >
+                <Image
+                  src={image.src}
+                  alt="Dropped drawing"
+                  width={150} 
+                  height={112}
+                  className="pointer-events-none"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
+                  onClick={() => deleteDroppedImage(config.name, image.id)}
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetTrigger asChild>
+          <Button variant="default" className="absolute bottom-6 right-6 z-10 rounded-full h-14 w-14 shadow-lg">
+            <Plus className="h-6 w-6" />
+            <span className="sr-only">Add Drawing</span>
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left">
+          <SheetHeader>
+            <SheetTitle>Your Creations</SheetTitle>
+            <SheetDescription>Drag a drawing onto a layer.</SheetDescription>
+          </SheetHeader>
+          <Card className="h-full w-full rounded-none border-0 mt-4">
             <CardContent>
               <div className="py-4 grid grid-cols-2 gap-4">
                 {savedCreations.length > 0 ? (
@@ -140,75 +194,8 @@ function ScenePageContent() {
               </div>
             </CardContent>
           </Card>
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset className="p-0 m-0 min-h-screen">
-        <div className="relative w-full h-screen overflow-hidden">
-          <div className="absolute inset-0 w-full h-full">
-            <Image
-              src="https://res.cloudinary.com/dtjjgiitl/image/upload/q_auto:good,f_auto,fl_progressive/v1752343064/kxi77tgkh9o7vtv95iwj.jpg"
-              alt="Scene background"
-              layout="fill"
-              objectFit="cover"
-              priority
-            />
-          </div>
-
-          <div className="absolute inset-0">
-            {layerConfigs.map(config => (
-              <div
-                key={config.name}
-                onDrop={(e) => handleDrop(e, config.name)}
-                onDragOver={handleDragOver}
-                className={cn(
-                  "absolute left-0 w-full border-2 border-transparent transition-all duration-300",
-                  config.hoverClass
-                )}
-                style={config.style}
-                title={config.title}
-              >
-                {layers[config.name].map(image => (
-                  <div 
-                    key={image.id}
-                    className="absolute group"
-                    style={{ left: `${image.x}px`, top: `${image.y}px`, width: 150, height: 112 }}
-                  >
-                    <Image
-                      src={image.src}
-                      alt="Dropped drawing"
-                      width={150} 
-                      height={112}
-                      className="pointer-events-none"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
-                      onClick={() => deleteDroppedImage(config.name, image.id)}
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-          
-          <SidebarTrigger variant="default" className="absolute bottom-6 right-6 z-10 rounded-full h-14 w-14 shadow-lg">
-            <Plus className="h-6 w-6" />
-            <span className="sr-only">Add Drawing</span>
-          </SidebarTrigger>
-        </div>
-      </SidebarInset>
-    </>
+        </SheetContent>
+      </Sheet>
+    </div>
   );
-}
-
-
-export default function ScenePage() {
-    return (
-        <SidebarProvider>
-            <ScenePageContent />
-        </SidebarProvider>
-    )
 }
