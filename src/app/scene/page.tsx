@@ -35,6 +35,7 @@ export default function ScenePage() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [draggedItem, setDraggedItem] = useState<{ src: string } | null>(null);
   const [movedImage, setMovedImage] = useState<MovedImageState | null>(null);
+  const [counter, setCounter] = useState(0);
 
   useEffect(() => {
     setIsMounted(true);
@@ -83,17 +84,10 @@ export default function ScenePage() {
     e.preventDefault();
     e.stopPropagation();
     
-    const imageElement = e.currentTarget;
-    const parentLayer = imageElement.closest('[data-layer-name]') as HTMLElement;
-    if (!parentLayer) return;
-
-    const layerRect = parentLayer.getBoundingClientRect();
-    const imageRect = imageElement.getBoundingClientRect();
-    
     setMovedImage({
       id: img.id,
-      offsetX: e.clientX - imageRect.left,
-      offsetY: e.clientY - imageRect.top,
+      offsetX: e.clientX - img.x,
+      offsetY: e.clientY - img.y,
     });
   };
 
@@ -104,22 +98,22 @@ export default function ScenePage() {
     e.stopPropagation();
 
     setDroppedImages(prev => prev.map(img => {
-        if (img.id === movedImage.id) {
-            const parentLayer = document.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLElement;
-            if (!parentLayer) return img;
+      if (img.id === movedImage.id) {
+        const parentLayer = document.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLElement;
+        if (!parentLayer) return img;
 
-            const layerRect = parentLayer.getBoundingClientRect();
-            
-            let newX = e.clientX - layerRect.left - movedImage.offsetX;
-            let newY = e.clientY - layerRect.top - movedImage.offsetY;
+        const layerRect = parentLayer.getBoundingClientRect();
+        
+        let newX = e.clientX - layerRect.left - movedImage.offsetX;
+        let newY = e.clientY - layerRect.top - movedImage.offsetY;
 
-            // Constrain movement within the layer bounds
-            newX = Math.max(0, Math.min(newX, layerRect.width - img.width));
-            newY = Math.max(0, Math.min(newY, layerRect.height - img.height));
+        // Constrain movement within the layer bounds
+        newX = Math.max(0, Math.min(newX, layerRect.width - img.width));
+        newY = Math.max(0, Math.min(newY, layerRect.height - img.height));
 
-            return { ...img, x: newX, y: newY };
-        }
-        return img;
+        return { ...img, x: newX, y: newY };
+      }
+      return img;
     }));
   }, [movedImage]);
   
@@ -129,23 +123,24 @@ export default function ScenePage() {
 
   useEffect(() => {
     if (movedImage) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    }
+      const handleGlobalMouseMove = (e: MouseEvent) => handleMouseMove(e);
+      const handleGlobalMouseUp = () => handleMouseUp();
+      
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
 
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+        document.removeEventListener('mouseup', handleGlobalMouseUp);
+      };
+    }
   }, [movedImage, handleMouseMove, handleMouseUp]);
 
   useEffect(() => {
-    if (!isMounted || movedImage) return; // Pause auto-move when dragging
+    if (!isMounted || movedImage) return;
 
     const intervalId = setInterval(() => {
+      setCounter(c => c + 1);
       setDroppedImages(currentImages => {
         if (currentImages.length === 0) return [];
         
@@ -154,13 +149,12 @@ export default function ScenePage() {
           if (!parentLayer) return img;
           
           const layerRect = parentLayer.getBoundingClientRect();
-          const moveX = (Math.random() - 0.5) * 4; // Move up to 2px in either x direction
-          const moveY = (Math.random() - 0.5) * 4; // Move up to 2px in either y direction
+          const moveX = (Math.random() - 0.5) * 4;
+          const moveY = (Math.random() - 0.5) * 4;
 
           let newX = img.x + moveX;
           let newY = img.y + moveY;
           
-          // Constrain movement within the layer bounds
           newX = Math.max(0, Math.min(newX, layerRect.width - img.width));
           newY = Math.max(0, Math.min(newY, layerRect.height - img.height));
 
@@ -296,6 +290,10 @@ export default function ScenePage() {
         </div>
       </div>
       
+      <div className="absolute bottom-6 left-6 z-20 bg-background/80 p-2 rounded-md shadow-lg text-foreground">
+        <p className="text-sm font-mono">Counter: {counter}</p>
+      </div>
+
       <Button 
         size="icon" 
         className="absolute bottom-6 right-6 z-20 rounded-full h-14 w-14 shadow-lg"
@@ -306,5 +304,3 @@ export default function ScenePage() {
     </div>
   );
 }
-
-    
