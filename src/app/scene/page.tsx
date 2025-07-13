@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, XCircle, MinusCircle, PlusCircle } from "lucide-react";
+import { Plus, XCircle, MinusCircle, PlusCircle, Play, Pause } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSceneContext } from "@/contexts/SceneContext";
 
@@ -21,6 +21,7 @@ interface DroppedImage {
   y: number;
   width: number;
   height: number;
+  isPaused: boolean;
 }
 
 interface MovedImageState {
@@ -68,7 +69,7 @@ export default function ScenePage() {
 
     setDroppedImages(prev => [
       ...prev,
-      { id: `${Date.now()}-${Math.random()}`, src: draggedItem.src, layer, x, y, width: 100, height: 75 }
+      { id: `${Date.now()}-${Math.random()}`, src: draggedItem.src, layer, x, y, width: 100, height: 75, isPaused: false }
     ]);
 
     setDraggedItem(null);
@@ -89,6 +90,12 @@ export default function ScenePage() {
       }
       return img;
     }));
+  };
+
+  const handleTogglePause = (id: string) => {
+    setDroppedImages(prev => prev.map(img => 
+      img.id === id ? { ...img, isPaused: !img.isPaused } : img
+    ));
   };
   
   const handleMouseDownOnImage = (e: ReactMouseEvent<HTMLDivElement>, img: DroppedImage) => {
@@ -157,8 +164,8 @@ export default function ScenePage() {
         if (currentImages.length === 0) return [];
         
         return currentImages.map(img => {
-          if (img.id === hoveredImageId) {
-            return img; // Pause movement if hovered
+          if (img.id === hoveredImageId || img.isPaused) {
+            return img; 
           }
 
           const parentLayer = document.querySelector(`[data-layer-name="${img.layer}"]`) as HTMLElement;
@@ -290,6 +297,18 @@ export default function ScenePage() {
                       )}
                     />
                      <div className="absolute -top-2 -right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                       <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6 rounded-full bg-background hover:bg-muted"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTogglePause(img.id);
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                       >
+                         {img.isPaused ? <Play className="h-4 w-4"/> : <Pause className="h-4 w-4"/>}
+                       </Button>
                        <Button
                         variant="outline"
                         size="icon"
